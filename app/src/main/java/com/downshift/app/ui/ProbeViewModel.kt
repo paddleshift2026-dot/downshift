@@ -105,13 +105,14 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun handle(c: DemoCommand) {
         when (c) {
-            is DemoCommand.Throttle -> setThrottle(c.value)
+            is DemoCommand.Throttle -> setThrottle(c.value ?: 0.0)
             is DemoCommand.Focus -> setFocus(c.mode)
             DemoCommand.Guide -> playGuidance()
             DemoCommand.Route -> requestRoute()
             DemoCommand.Report -> writeReport()
             is DemoCommand.Loop -> loadLoop(c.name)
             DemoCommand.Tone -> playTone()
+            else -> Unit // sound lab commands
         }
     }
 

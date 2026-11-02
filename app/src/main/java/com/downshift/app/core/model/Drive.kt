@@ -1,7 +1,20 @@
 package com.downshift.app.core.model
 
 /** What the gear selector says. Inside DRIVE the virtual powertrain picks its own gear. */
-enum class GearState { UNKNOWN, PARK, REVERSE, NEUTRAL, DRIVE }
+enum class GearState {
+    UNKNOWN, PARK, REVERSE, NEUTRAL, DRIVE;
+
+    companion object {
+        /** AAOS VehicleGear: 1 neutral, 2 reverse, 4 park, 8 drive; 16 and up are manual gears, which count as drive. */
+        fun fromAaos(value: Int): GearState = when {
+            value == 1 -> NEUTRAL
+            value == 2 -> REVERSE
+            value == 4 -> PARK
+            value >= 8 && value and (value - 1) == 0 -> DRIVE
+            else -> UNKNOWN
+        }
+    }
+}
 
 /** One control tick: pedals in 0..1, road speed, and the selector. */
 data class DriveInputs(val throttle: Double, val brake: Double, val speedMps: Double, val gear: GearState)

@@ -5,18 +5,48 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.downshift.app.adapters.audio.FocusMode
+import com.downshift.app.core.build.Build
+import com.downshift.app.core.build.EngineId
+import com.downshift.app.core.build.ExhaustPart
+import com.downshift.app.core.build.IntakePart
+import com.downshift.app.core.build.TransmissionPart
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 
-/** Probe commands, posted by the screen or by `adb shell am broadcast` through [DemoReceiver]. */
+/** Sound lab and probe commands, posted by the screens or by `adb shell am broadcast` through [DemoReceiver]. */
 sealed class DemoCommand {
-    data class Throttle(val value: Double) : DemoCommand()
+    /** Manual throttle 0..1; null clears it so the console pedal or the estimate drives again. */
+    data class Throttle(val value: Double?) : DemoCommand()
     data class Focus(val mode: FocusMode) : DemoCommand()
     object Guide : DemoCommand()
     object Route : DemoCommand()
     object Report : DemoCommand()
     data class Loop(val name: String) : DemoCommand()
     object Tone : DemoCommand()
+    object EngineStart : DemoCommand()
+    object EngineStop : DemoCommand()
+    data class Record(val on: Boolean, val name: String) : DemoCommand()
+
+    /** Changes only the parts and sliders that are given. */
+    data class BuildChange(
+        val engine: EngineId? = null,
+        val intake: IntakePart? = null,
+        val exhaust: ExhaustPart? = null,
+        val transmission: TransmissionPart? = null,
+        val pops: Double? = null,
+        val redlineOffset: Int? = null,
+        val volume: Double? = null,
+    ) : DemoCommand() {
+        fun applyTo(b: Build) = b.copy(
+            engine = engine ?: b.engine,
+            intake = intake ?: b.intake,
+            exhaust = exhaust ?: b.exhaust,
+            transmission = transmission ?: b.transmission,
+            pops = pops ?: b.pops,
+            redlineOffset = redlineOffset ?: b.redlineOffset,
+            volume = volume ?: b.volume,
+        )
+    }
 }
 
 object DemoBus {
@@ -26,15 +56,34 @@ object DemoBus {
 }
 
 /**
- * adb shell am broadcast -n com.downshift.app/.adapters.demo.DemoReceiver --es cmd throttle --ef value 0.6
- *   cmd: throttle --ef value 0..1 | focus --es mode none|game|media|sonification | guide | route | report
- *        loop --es name FILE.wav (from debug assets/loops) | tone
+ * adb shell am broadcast -n com.downshift.app/.adapters.demo.DemoReceiver --es cmd start
+ *   sound lab: start | stop | throttle --ef value 0..1 | throttle --es value clear
+ *              build [--es engine I4|V8|V12] [--es intake NA|TURBO1|TURBO2|TURBO3|SUPERCHARGER] [--es exhaust STOCK|SPORT|TRACK]
+ *                    [--es trans AT|DCT|MT] [--ef pops 0..1] [--ei redline -500..500] [--ef volume 0..1]
+ *              record --es value on|off --es name NAME   (saved to files/NAME.wav)
+ *   probe:     focus --es mode none|game|media|sonification | guide | route | report
+ *              loop --es name FILE.wav (from debug assets/loops) | tone
  */
 class DemoReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val cmd = intent.getStringExtra("cmd") ?: return
+        @Suppress("DEPRECATION")
+        val value = intent.extras?.get("value")
         val command = when (cmd) {
-            "throttle" -> DemoCommand.Throttle(intent.getFloatExtra("value", 0f).toDouble())
+            "throttle" -> DemoCommand.Throttle(if (value == "clear") null else (value as? Number)?.toDouble() ?: 0.0)
+            "start" -> DemoCommand.EngineStart
+            "stop" -> DemoCommand.EngineStop
+            "build" -> DemoCommand.BuildChange(
+                engine = enumExtra<EngineId>(intent, "engine"),
+                intake = enumExtra<IntakePart>(intent, "intake"),
+                exhaust = enumExtra<ExhaustPart>(intent, "exhaust"),
+                transmission = intent.getStringExtra("trans")?.let { if (it.equals("MT", true)) "MT_BLIP" else it }
+                    ?.let { t -> TransmissionPart.entries.firstOrNull { it.name.equals(t, ignoreCase = true) } },
+                pops = if (intent.hasExtra("pops")) intent.getFloatExtra("pops", 0.5f).toDouble() else null,
+                redlineOffset = if (intent.hasExtra("redline")) intent.getIntExtra("redline", 0) else null,
+                volume = if (intent.hasExtra("volume")) intent.getFloatExtra("volume", 0.8f).toDouble() else null,
+            )
+            "record" -> DemoCommand.Record(on = value != "off", name = intent.getStringExtra("name") ?: "recording")
             "focus" -> DemoCommand.Focus(
                 FocusMode.entries.firstOrNull { it.name.equals(intent.getStringExtra("mode"), ignoreCase = true) } ?: FocusMode.NONE,
             )
@@ -48,4 +97,7 @@ class DemoReceiver : BroadcastReceiver() {
         Log.i("DownshiftDemo", "command $cmd -> $command")
         DemoBus.post(command)
     }
+
+    private inline fun <reified E : Enum<E>> enumExtra(intent: Intent, key: String): E? =
+        intent.getStringExtra(key)?.let { s -> enumValues<E>().firstOrNull { it.name.equals(s, ignoreCase = true) } }
 }
