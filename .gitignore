@@ -12,8 +12,7 @@
 
 # screen recordings are large; upload them, do not commit them
 tools/video/
-
-# screen recordings are large; upload them, do not commit them
-tools/video/
 audio_test/
 app/src/debug/assets/loops/
+# licensed engine packs (built by tools/pack_builder.py) stay out of git
+app/src/main/assets/engines/

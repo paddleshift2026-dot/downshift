@@ -25,11 +25,10 @@ data class Telemetry(val running: Boolean, val rpm: Double, val gear: Int, val l
 /**
  * The whole engine for one audio stream. Each renderBlock steps the powertrain, induction and pops by the block's
  * duration, asks the director what to play and has the mixer render it, so control and sound move together.
- * setBuild, setFuel, start and stop may come from any thread and take effect at the start of the next block.
+ * sampleRate is the output rate (use the device's native rate for the low-latency path); packs at other rates are
+ * resampled. setBuild, setFuel, start and stop may come from any thread and take effect at the start of the next block.
  */
-class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind) {
-    val sampleRate: Int = pack.sampleRate
-
+class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRate: Int = pack.sampleRate) {
     @Volatile
     var telemetry: Telemetry = Telemetry.OFF
         private set
@@ -47,12 +46,9 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind) {
     private val induction = InductionModel(build.intake)
     private val pops = PopScheduler(POP_SEED)
     private val director = SoundDirector(pack.voicing)
-    private val mixer = EngineMixer(sampleRate, pack.clips)
+    private val mixer = EngineMixer(sampleRate, pack.clips, clipRate = pack.sampleRate)
 
-    fun setBuild(build: Build, pack: LoadedPack) {
-        require(pack.sampleRate == sampleRate) { "pack runs at ${pack.sampleRate} Hz but this stream at $sampleRate Hz" }
-        pendingBuild.set(build to pack)
-    }
+    fun setBuild(build: Build, pack: LoadedPack) = pendingBuild.set(build to pack)
 
     fun setFuel(fuel: FuelKind) = pendingFuel.set(fuel)
 
@@ -87,7 +83,7 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind) {
             induction.part = b.intake
             if (p !== pack) {
                 pack = p
-                mixer.setClips(p.clips)
+                mixer.setClips(p.clips, p.sampleRate)
                 director.voicing = p.voicing
             }
         }

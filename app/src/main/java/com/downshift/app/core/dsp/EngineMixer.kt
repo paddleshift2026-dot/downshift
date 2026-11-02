@@ -15,11 +15,14 @@ import kotlin.math.tan
  * across each block, and the exhaust part is a filter chain that crossfades when it changes.
  *
  * Signal flow: (loops + pops) × master + one-shots → exhaust chain → + induction × master → limiter.
+ * Clips recorded at clipRate are resampled to the output sampleRate (devices often run at 48 kHz, packs at 44.1 kHz).
  * Buffers and voices are allocated up front; render does not allocate unless the exhaust part changes
  * or a block is longer than any before it.
  */
-class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 1) {
+class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 1, clipRate: Int = sampleRate) {
     private val fs = sampleRate.toDouble()
+    private var clipRateHz = clipRate
+    private var clipStep = clipRate / fs
     private var clipMap: Map<String, FloatArray> = emptyMap()
     private var voiceByName = HashMap<String, LoopVoiceState>()
     private var voices = ArrayList<LoopVoiceState>()
@@ -49,11 +52,13 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
     private var blowOffEnv = 0f
 
     init {
-        setClips(clips)
+        setClips(clips, clipRate)
     }
 
     /** Swaps the clip set (a new engine pack). Loop phases restart and one-shots stop. */
-    fun setClips(clips: Map<String, FloatArray>) {
+    fun setClips(clips: Map<String, FloatArray>, clipRate: Int = clipRateHz) {
+        clipRateHz = clipRate
+        clipStep = clipRate / fs
         clipMap = clips
         val byName = HashMap<String, LoopVoiceState>()
         for ((name, data) in clips) if (data.size >= 2) byName[name] = LoopVoiceState(data)
@@ -100,7 +105,7 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
             var done = 0
             while (done < frames) {
                 val n = minOf(RATE_STEP, frames - done)
-                v.resampler.rate = from + (v.targetRate - from) * (done + n) / frames
+                v.resampler.rate = (from + (v.targetRate - from) * (done + n) / frames) * clipStep
                 v.resampler.render(scratch, n, done)
                 done += n
             }
@@ -145,7 +150,7 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
             val clip = clipMap[s.clip] ?: continue
             val slot = shots.firstOrNull { it.clip == null } ?: shots.maxBy { it.pos }
             slot.clip = clip
-            slot.pos = 0
+            slot.pos = 0.0
             slot.gain = s.gain.toFloat()
         }
     }
@@ -153,10 +158,18 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
     private fun renderShots(frames: Int) {
         for (v in shots) {
             val clip = v.clip ?: continue
-            val n = minOf(frames, clip.size - v.pos)
-            for (i in 0 until n) bus[i] += clip[v.pos + i] * v.gain
-            v.pos += n
-            if (v.pos >= clip.size) v.clip = null
+            val last = clip.size - 1
+            var i = 0
+            while (i < frames) {
+                val i0 = v.pos.toInt()
+                if (i0 > last) break
+                val a = clip[i0]
+                val b = if (i0 < last) clip[i0 + 1] else a
+                bus[i] += (a + (b - a) * (v.pos - i0).toFloat()) * v.gain
+                v.pos += clipStep
+                i++
+            }
+            if (v.pos.toInt() > last) v.clip = null
         }
     }
 
@@ -234,7 +247,7 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
 
     private class ShotVoice {
         var clip: FloatArray? = null
-        var pos = 0
+        var pos = 0.0
         var gain = 0f
     }
 

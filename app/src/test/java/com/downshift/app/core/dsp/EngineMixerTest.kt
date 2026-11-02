@@ -103,6 +103,31 @@ class EngineMixerTest {
     }
 
     @Test
+    fun clipsRecordedAtAnotherRateKeepTheirPitchAndLength() {
+        val clipRate = 44_100
+        val tone = FloatArray(441) { (0.5 * sin(2 * PI * 100.0 * it / clipRate)).toFloat() }
+        val m = EngineMixer(48_000, mapOf("tone" to tone, "click" to FloatArray(4410) { 0.5f }), clipRate = clipRate)
+        val out = FloatArray(48_000)
+        val buf = FloatArray(480)
+        for (b in 0 until 100) {
+            m.render(plan(1.0), buf, 480)
+            System.arraycopy(buf, 0, out, b * 480, 480)
+        }
+        val rising = (24_001 until 48_000).count { out[it - 1] < 0f && out[it] >= 0f }
+        assertEquals(50, rising)
+
+        val shot = EngineMixer(48_000, mapOf("tone" to tone, "click" to FloatArray(4410) { 0.5f }), clipRate = clipRate)
+        val heard = FloatArray(9_600)
+        shot.render(plan(0.0, shots = listOf(OneShot("click", 1.0))), buf, 480)
+        System.arraycopy(buf, 0, heard, 0, 480)
+        for (b in 1 until 20) {
+            shot.render(plan(0.0), buf, 480)
+            System.arraycopy(buf, 0, heard, b * 480, 480)
+        }
+        assertEquals(4_800.0, heard.count { it > 0.25f }.toDouble(), 30.0)
+    }
+
+    @Test
     fun unknownClipsAreIgnored() {
         assertTrue(EngineMixer(fs, emptyMap()).renderSeconds(plan(1.0), 0.05).all { it == 0f })
     }
