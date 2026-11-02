@@ -32,20 +32,23 @@ object SynthPack {
         val ladder = BandLayout.defaultRpms(spec.idleRpm, spec.redlineRpm)
         val clips = LinkedHashMap<String, FloatArray>()
 
+        // Like a recording, each band is louder than the one below it; idle sits at IDLE_LEVEL of the top band.
+        val bands = PackRules.BANDS.size
+        fun level(k: Int) = ON_RMS * (IDLE_LEVEL + (1 - IDLE_LEVEL) * k / bands)
         val idleRaw = loop(spec, timbre, on, spec.idleRpm, sampleRate, seed = 1)
-        val idleGain = ON_RMS / rms(idleRaw)
+        val idleGain = level(0) / rms(idleRaw)
         clips["idle"] = scale(idleRaw, idleGain)
-        for (k in 1..PackRules.BANDS.size) {
-            clips["on_$k"] = normalize(loop(spec, timbre, on, ladder[k], sampleRate, seed = 10L + k), ON_RMS)
-            clips["off_$k"] = normalize(loop(spec, timbre, off, ladder[k], sampleRate, seed = 20L + k), ON_RMS * OFF_LEVEL)
+        for (k in 1..bands) {
+            clips["on_$k"] = normalize(loop(spec, timbre, on, ladder[k], sampleRate, seed = 10L + k), level(k))
+            clips["off_$k"] = normalize(loop(spec, timbre, off, ladder[k], sampleRate, seed = 20L + k), level(k) * OFF_LEVEL)
         }
         clips["maxRPM"] = limiterLoop(spec, timbre, on, sampleRate)
         clips["startup"] = startup(spec, timbre, on, sampleRate, idleGain)
         clips["engine_off"] = shutdown(spec, timbre, on, sampleRate, idleGain)
 
-        val bands = PackRules.BANDS.indices.map { it + 1 }
+        val numbers = (1..bands).toList()
         val rpms = ladder.drop(1)
-        val voicing = Voicing("idle", spec.idleRpm, bands.map { "on_$it" }, rpms, bands.map { "off_$it" }, rpms, "startup", "engine_off", "maxRPM")
+        val voicing = Voicing("idle", spec.idleRpm, numbers.map { "on_$it" }, rpms, numbers.map { "off_$it" }, rpms, "startup", "engine_off", "maxRPM")
         return LoadedPack(spec.id, sampleRate, clips, voicing, SOURCE)
     }
 
@@ -89,10 +92,10 @@ object SynthPack {
                 else -> idle + (FLARE_FACTOR - 1) * idle * exp(-(t - FLARE_SEC) / spec.fallTau) to 1.0
             }
         }.also { buf ->
-            // The starter motor whines under the cranking.
-            for (i in 0 until (STARTER_SEC * sampleRate).toInt()) {
+            // The starter motor whines under the cranking, after the relay's short delay.
+            for (i in (STARTER_DELAY_SEC * sampleRate).toInt() until (STARTER_SEC * sampleRate).toInt()) {
                 val t = i.toDouble() / sampleRate
-                val env = 1 - t / STARTER_SEC
+                val env = minOf(1.0, (t - STARTER_DELAY_SEC) / 0.005) * (1 - t / STARTER_SEC)
                 buf[i] += (STARTER_GAIN * env * (sin(2 * PI * STARTER_HZ * t) + 0.5 * sin(4 * PI * STARTER_HZ * t))).toFloat()
             }
             fadeOut(buf, (HANDOVER_SEC * sampleRate).toInt())
@@ -151,6 +154,7 @@ object SynthPack {
 
     private const val LOOP_SEC = 0.5
     private const val ON_RMS = 0.18
+    private const val IDLE_LEVEL = 0.55
     private const val OFF_LEVEL = 0.7
     private const val PEAK = 0.95
     private const val LIMITER_HZ = 12.0
@@ -163,6 +167,7 @@ object SynthPack {
     private const val FLARE_FACTOR = 1.6
     private const val FLARE_FIRING = 1.2
     private const val HANDOVER_SEC = 0.2
+    private const val STARTER_DELAY_SEC = 0.04
     private const val STARTER_SEC = 0.35
     private const val STARTER_HZ = 170.0
     private const val STARTER_GAIN = 0.05

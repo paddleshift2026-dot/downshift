@@ -126,14 +126,14 @@ class VirtualPowertrain(var spec: EngineSpec, var gears: GearSet, var transmissi
                     }
                     shiftLeft -= dt
                 } else {
-                    target = if (gear == 1) launchTarget(coupled, speed, throttle) else maxOf(coupled, spec.idleRpm)
+                    target = if (gear == 1) launchTarget(coupled, throttle) else maxOf(coupled, spec.idleRpm)
                     tau = TRACK_TAU
                 }
             }
             GearState.REVERSE -> {
                 gear = -1
                 shiftLeft = 0.0
-                target = launchTarget(coupledAt(1, speed), speed, throttle)
+                target = launchTarget(coupledAt(1, speed), throttle)
                 tau = TRACK_TAU
             }
             else -> {
@@ -205,12 +205,12 @@ class VirtualPowertrain(var spec: EngineSpec, var gears: GearSet, var transmissi
         return g
     }
 
-    /** First gear slips at low speed so the rpm rises before the car moves, fading out by SLIP_FADE_MPS. */
-    private fun launchTarget(coupled: Double, speed: Double, throttle: Double): Double {
-        val slip = spec.idleRpm + throttle * (LAUNCH_SLIP_FRACTION * spec.redlineRpm - spec.idleRpm)
-        val w = (1.0 - speed / SLIP_FADE_MPS).coerceIn(0.0, 1.0)
-        return maxOf(coupled, w * slip + (1 - w) * spec.idleRpm)
-    }
+    /**
+     * First gear slips at low speed so the rpm rises before the car moves, and holds there until the wheels catch up.
+     * (Fading the slip out by speed made the rpm sag mid-launch, which sounded like bogging down.)
+     */
+    private fun launchTarget(coupled: Double, throttle: Double): Double =
+        maxOf(coupled, spec.idleRpm + throttle * (LAUNCH_SLIP_FRACTION * spec.redlineRpm - spec.idleRpm))
 
     /** Cranking to 250 rpm, then a smooth flare to 1.6 × idle; the normal step lets it settle afterwards. */
     private fun startupRpm(t: Double): Double {
@@ -238,7 +238,6 @@ class VirtualPowertrain(var spec: EngineSpec, var gears: GearSet, var transmissi
         const val TRACK_TAU = 0.05
         const val LOAD_TAU = 0.06
         const val LAUNCH_SLIP_FRACTION = 0.45
-        const val SLIP_FADE_MPS = 8.0
         const val COAST_THROTTLE = 0.05
         const val COAST_UPSHIFT_FRACTION = 0.75
         const val KICKDOWN_THROTTLE = 0.85

@@ -16,9 +16,10 @@ class LoopResampler(private val loop: FloatArray) {
 
     private var pos = 0.0
 
-    fun render(out: FloatArray, frames: Int = out.size) {
+    /** Writes frames samples into out starting at offset. */
+    fun render(out: FloatArray, frames: Int = out.size, offset: Int = 0) {
         val n = loop.size
-        for (i in 0 until frames) {
+        for (i in offset until offset + frames) {
             val i0 = pos.toInt()
             val frac = (pos - i0).toFloat()
             val a = loop[i0]

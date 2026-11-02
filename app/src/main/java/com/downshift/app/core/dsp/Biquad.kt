@@ -1,6 +1,7 @@
 package com.downshift.app.core.dsp
 
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.log10
 import kotlin.math.pow
@@ -24,6 +25,9 @@ class Biquad(b0: Double, b1: Double, b2: Double, a0: Double, a1: Double, a2: Dou
         val y = b0 * x + z1
         z1 = b1 * x - a1 * y + z2
         z2 = b2 * x - a2 * y
+        // A tail decaying through silence turns denormal, which is very slow on x86 (the emulator).
+        if (abs(z1) < DENORMAL) z1 = 0.0
+        if (abs(z2) < DENORMAL) z2 = 0.0
         return y.toFloat()
     }
 
@@ -51,6 +55,8 @@ class Biquad(b0: Double, b1: Double, b2: Double, a0: Double, a1: Double, a2: Dou
     }
 
     companion object {
+        private const val DENORMAL = 1e-20
+
         fun lowShelf(fs: Double, f0: Double, gainDb: Double): Biquad {
             val a = 10.0.pow(gainDb / 40)
             val w0 = 2 * PI * f0 / fs
