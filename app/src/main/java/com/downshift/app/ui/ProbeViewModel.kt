@@ -18,6 +18,7 @@ import com.downshift.app.core.audio.TestTone
 import com.downshift.app.core.audio.WavLoader
 import com.downshift.app.core.probe.ProbeLedger
 import com.downshift.app.core.probe.ProbeRow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -45,20 +46,42 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
     private val _audio = MutableStateFlow("")
     val audio: StateFlow<String> = _audio.asStateFlow()
 
+    private var started = false
+    private var active = false
+    private var refresh: Job? = null
+
     init {
-        configDump = car.start()
-        pleos.start()
-        focus.start()
+        viewModelScope.launch { DemoBus.commands.collect { if (active) handle(it) } }
+    }
+
+    /** The probe tab came on screen: listeners start once; polling, the tone and the refresh run while visible. */
+    fun activate() {
+        if (active) return
+        active = true
+        if (!started) {
+            configDump = car.start()
+            pleos.start()
+            focus.start()
+            started = true
+        }
         console.start()
         playTone()
-        viewModelScope.launch {
+        refresh = viewModelScope.launch {
             while (isActive) {
                 _rows.value = ledger.rows()
                 _audio.value = audioLine()
                 delay(500)
             }
         }
-        viewModelScope.launch { DemoBus.commands.collect { handle(it) } }
+    }
+
+    fun deactivate() {
+        if (!active) return
+        active = false
+        refresh?.cancel()
+        refresh = null
+        console.stop()
+        player.stop()
     }
 
     fun setThrottle(t: Double) = player.setThrottle(t)
@@ -138,11 +161,12 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
-        console.stop()
-        player.stop()
-        focus.stop()
-        pleos.stop()
-        car.stop()
+        deactivate()
+        if (started) {
+            focus.stop()
+            pleos.stop()
+            car.stop()
+        }
     }
 
     private companion object {

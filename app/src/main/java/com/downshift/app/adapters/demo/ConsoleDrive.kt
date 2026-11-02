@@ -6,8 +6,7 @@ import com.downshift.app.core.model.GearState
 import com.downshift.app.core.powertrain.DemoVehicleModel
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.Locale
-import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /** One reading of the Virtual Console pedals, 0..1, and when it arrived (wall clock). */
 data class ConsolePedal(val throttle: Double, val brake: Double, val atMs: Long)
@@ -52,7 +51,8 @@ class ConsoleDrive(private val gear: () -> GearState, private val onPedal: (Cons
         var lastNs = System.nanoTime()
         var lastSessionMs = 0L
         var lastPostMs = 0L
-        var postedKph = Double.NaN
+        var postedKph = -1
+        var warned = false
         var lastAccel = Double.NaN
         while (running) {
             val t0 = System.nanoTime()
@@ -77,19 +77,23 @@ class ConsoleDrive(private val gear: () -> GearState, private val onPedal: (Cons
             onPedal(ConsolePedal(accel / 100.0, brake / 100.0, now))
 
             if (now - lastSessionMs >= SESSION_MS) {
-                runCatching { post(session) }
+                post(session)
                 lastSessionMs = now
             }
             val ns = System.nanoTime()
             val dt = ((ns - lastNs) / 1e9).coerceIn(0.0, 0.2)
             lastNs = ns
             if (demoPhysics) {
-                val kph = car.step(accel / 100.0, brake / 100.0, gear(), dt) * 3.6
+                // The console takes whole km/h only (30.5 -> 400 invalid_speed), and answers a write with its full state.
+                val kph = (car.step(accel / 100.0, brake / 100.0, gear(), dt) * 3.6).roundToInt()
                 demoSpeedMps = car.speedMps
-                val changed = postedKph.isNaN() || abs(kph - postedKph) >= SPEED_STEP_KPH
-                if ((changed && now - lastPostMs >= MIN_POST_MS) || now - lastPostMs >= MAX_POST_MS) {
-                    val q = String.format(Locale.ROOT, "%.1f", kph)
-                    if (runCatching { post(URL("$BASE/vehicle/controls?speed=$q")) }.isSuccess) postedKph = kph
+                if ((kph != postedKph && now - lastPostMs >= MIN_POST_MS) || now - lastPostMs >= MAX_POST_MS) {
+                    if (post(URL("$BASE/vehicle/controls?speed=$kph"))) {
+                        postedKph = kph
+                    } else if (!warned) {
+                        Log.w(tag, "console refused speed=$kph")
+                        warned = true
+                    }
                     lastPostMs = now
                 }
             }
@@ -104,7 +108,8 @@ class ConsoleDrive(private val gear: () -> GearState, private val onPedal: (Cons
         return c.inputStream.use { it.readBytes().toString(Charsets.UTF_8) }
     }
 
-    private fun post(url: URL) {
+    /** True on a 2xx answer. The body is read to the end so the connection can be reused. */
+    private fun post(url: URL): Boolean = runCatching {
         val c = url.openConnection() as HttpURLConnection
         c.requestMethod = "POST"
         c.connectTimeout = TIMEOUT_MS
@@ -114,7 +119,8 @@ class ConsoleDrive(private val gear: () -> GearState, private val onPedal: (Cons
         c.outputStream.close()
         val ok = c.responseCode in 200..299
         (if (ok) c.inputStream else c.errorStream)?.use { it.readBytes() }
-    }
+        ok
+    }.getOrDefault(false)
 
     private fun number(re: Regex, body: String) = re.find(body)?.groupValues?.get(1)?.toDoubleOrNull()
 
@@ -128,8 +134,7 @@ class ConsoleDrive(private val gear: () -> GearState, private val onPedal: (Cons
         const val RETRY_MS = 1000L
         const val SESSION_MS = 2000L
         const val TIMEOUT_MS = 300
-        const val SPEED_STEP_KPH = 0.5
-        const val MIN_POST_MS = 50L
+        const val MIN_POST_MS = 100L
         const val MAX_POST_MS = 250L
         val ACCEL = Regex("\"accelerator_pct\"\\s*:\\s*([0-9.]+)")
         val BRAKE = Regex("\"brake_pct\"\\s*:\\s*([0-9.]+)")

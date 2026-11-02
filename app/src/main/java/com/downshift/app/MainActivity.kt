@@ -4,15 +4,36 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.downshift.app.ui.ProbeScreen
+import com.downshift.app.ui.SoundLabScreen
+import com.downshift.app.ui.Faint
+import com.downshift.app.ui.Ground
+import com.downshift.app.ui.Heat
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestCarPermissions()
-        setContent { ProbeScreen() }
+        setContent { Tabs() }
     }
 
     /** Runtime grants for the AAOS properties; whatever stays denied shows up in the probe ledger. */
@@ -24,5 +45,28 @@ class MainActivity : ComponentActivity() {
             "android.car.permission.CAR_EXTERIOR_LIGHTS", "android.car.permission.CONTROL_CAR_SEATS",
         ).filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
         if (wanted.isNotEmpty()) runCatching { ActivityCompat.requestPermissions(this, wanted.toTypedArray(), 1) }
+    }
+}
+
+/** Sound lab first; the M0 probe stays one tab away and only runs while shown. */
+@Composable
+private fun Tabs() {
+    var tab by rememberSaveable { mutableIntStateOf(0) }
+    Column(Modifier.fillMaxSize().background(Ground)) {
+        Row(Modifier.padding(start = 24.dp, top = 16.dp), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+            listOf("사운드 랩", "프로브").forEachIndexed { i, title ->
+                Text(
+                    title,
+                    color = if (i == tab) Heat else Faint,
+                    fontSize = 24.sp,
+                    fontWeight = if (i == tab) FontWeight.Bold else FontWeight.Normal,
+                    modifier = Modifier.clickable { tab = i },
+                )
+            }
+        }
+        when (tab) {
+            0 -> SoundLabScreen()
+            else -> ProbeScreen()
+        }
     }
 }

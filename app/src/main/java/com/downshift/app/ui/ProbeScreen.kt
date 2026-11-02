@@ -15,12 +15,12 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,16 +30,14 @@ import com.downshift.app.adapters.audio.FocusMode
 import com.downshift.app.core.probe.ProbeRow
 import com.downshift.app.core.probe.ProbeStatus
 
-private val Ground = Color(0xFF0C0D0F)
-private val Ink = Color(0xFFF2F3F5)
-private val Muted = Color(0xFFA9AFB8)
-private val Faint = Color(0xFF858B95)
-private val Heat = Color(0xFFFF7A30)
-private val Clean = Color(0xFF26C590)
-private val Alert = Color(0xFFE5484D)
 
 @Composable
 fun ProbeScreen(vm: ProbeViewModel = viewModel()) {
+    // The probes poll and play only while this tab is on screen.
+    DisposableEffect(vm) {
+        vm.activate()
+        onDispose { vm.deactivate() }
+    }
     val rows by vm.rows.collectAsStateWithLifecycle()
     val audio by vm.audio.collectAsStateWithLifecycle()
     var throttle by remember { mutableFloatStateOf(0f) }
