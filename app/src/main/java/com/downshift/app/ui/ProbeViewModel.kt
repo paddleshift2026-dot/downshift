@@ -9,6 +9,7 @@ import com.downshift.app.adapters.audio.FocusProbe
 import com.downshift.app.adapters.audio.LoopPlayer
 import com.downshift.app.adapters.audio.trackUsage
 import com.downshift.app.adapters.car.CarPropertyProbe
+import com.downshift.app.adapters.demo.ConsolePedalProbe
 import com.downshift.app.adapters.demo.DemoBus
 import com.downshift.app.adapters.demo.DemoCommand
 import com.downshift.app.adapters.pleos.PleosProbe
@@ -35,6 +36,7 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
     private val pleos = PleosProbe(app, ledger)
     private val player = LoopPlayer(app, latency)
     private val focus = FocusProbe(app, ledger)
+    private val console = ConsolePedalProbe(ledger) { t -> player.setThrottle(t) }
     private var configDump = ""
     private var focusMode = FocusMode.NONE
 
@@ -47,6 +49,7 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
         configDump = car.start()
         pleos.start()
         focus.start()
+        console.start()
         playTone()
         viewModelScope.launch {
             while (isActive) {
@@ -128,10 +131,13 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun audioLine(): String {
         fun f(v: Double?) = v?.let { "%.0f".format(it) } ?: "-"
-        return "${player.bufferInfo} | 페달→출력 p50 ${f(latency.p50())} / p95 ${f(latency.p95())} / max ${f(latency.max())} ms (n=${latency.count})"
+        val rt = console.roundTrip
+        return "${player.bufferInfo} | 페달→출력 p50 ${f(latency.p50())} / p95 ${f(latency.p95())} / max ${f(latency.max())} ms (n=${latency.count})" +
+            " | 콘솔 읽기 왕복 p50 ${f(rt.p50())} / p95 ${f(rt.p95())} ms (n=${rt.count})"
     }
 
     override fun onCleared() {
+        console.stop()
         player.stop()
         focus.stop()
         pleos.stop()
