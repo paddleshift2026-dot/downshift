@@ -1,0 +1,533 @@
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.api.Brake {
+  public abstract void checkBrakePedalStatusCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentBrakePedalStatus(kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void registerBrakePedalStatus(ai.pleos.playground.vehicle.listener.BrakePedalStatusListener);
+  public abstract void unregisterBrakePedalStatus(ai.pleos.playground.vehicle.listener.BrakePedalStatusListener);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.api.CarInfo {
+  public abstract void checkCRNInfoCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkVINInfoCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getVINInfo(kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCRNInfo(kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCapabilityInfo(kotlin.jvm.functions.Function1<? super java.util.Map<java.lang.String, ai.pleos.playground.vehicle.data.CapabilityConfig<java.lang.Object>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.api.Gear {
+  public abstract void getCurrentGearSelectionState(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.constant.control.VehicleGear, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void registerGearSelection(ai.pleos.playground.vehicle.listener.GearSelectionListener);
+  public abstract void unregisterGearSelection(ai.pleos.playground.vehicle.listener.GearSelectionListener);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.api.Odometer {
+  public static void setRangeRemainingDistance$default(ai.pleos.playground.vehicle.api.Odometer, float, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public abstract void checkCurrentDistanceDrivenCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentDistanceDriven(kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkTripDrivingTimeCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkTripCurrentDrivingTimeCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkTripCumulativeDrivingTimeCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkTripSinceRefillDrivingTimeCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getTripCurrentDrivingTime(kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getTripCumulativeDrivingTime(kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getTripSinceRefillDrivingTime(kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkTripDrivingDistanceCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkTripCurrentDrivingDistanceCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkTripInstantaneousDrivingDistanceCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkTripCumulativeDrivingDistanceCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkTripSinceRefillDrivingDistanceCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getTripCurrentDrivingDistance(kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getTripInstantaneousDrivingDistance(kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getTripCumulativeDrivingDistance(kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getTripSinceRefillDrivingDistance(kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void setRangeRemainingDistance(float, kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getRangeRemainingDistance(kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void registerRangeRemainingListener(ai.pleos.playground.vehicle.listener.RangeRemainingListener);
+  public abstract void unregisterRangeRemainingListener(ai.pleos.playground.vehicle.listener.RangeRemainingListener);
+  public abstract void registerDistanceDriven(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public abstract void unregisterDistanceDriven(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public abstract void registerTripCurrentDrivingTime(ai.pleos.playground.vehicle.listener.DrivingTimeListener);
+  public abstract void unregisterTripCurrentDrivingTime(ai.pleos.playground.vehicle.listener.DrivingTimeListener);
+  public abstract void registerTripCumulativeDrivingTime(ai.pleos.playground.vehicle.listener.DrivingTimeListener);
+  public abstract void unregisterTripCumulativeDrivingTime(ai.pleos.playground.vehicle.listener.DrivingTimeListener);
+  public abstract void registerTripSinceRefillDrivingTime(ai.pleos.playground.vehicle.listener.DrivingTimeListener);
+  public abstract void unregisterTripSinceRefillDrivingTime(ai.pleos.playground.vehicle.listener.DrivingTimeListener);
+  public abstract void registerTripCurrentDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public abstract void unregisterTripCurrentDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public abstract void registerTripInstantaneousDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public abstract void unregisterTripInstantaneousDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public abstract void registerTripCumulativeDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public abstract void unregisterTripCumulativeDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public abstract void registerTripSinceRefillDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public abstract void unregisterTripSinceRefillDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.api.Seat {
+  public static void moveSeatBackrestAngle$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static void moveSeatHeadrestForeAft$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static void moveSeatHeadrestHeight$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static void moveSeatHeight$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static void moveSeatLumbarForeAft$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static void moveSeatLumbarSideSupport$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static void selectSeatMemory$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, int, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static void moveSeatTilt$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static void moveSeatDepth$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static void moveSeatHeadrestAngle$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static void moveSeatBeltHeight$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static void moveSeatForeAft$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static void setHvacSeatTemperature$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, int, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static void setHvacSeatVentilation$default(ai.pleos.playground.vehicle.api.Seat, ai.pleos.playground.vehicle.api.model.area.SeatArea, int, kotlin.jvm.functions.Function2, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public abstract void checkSeatOccupancyCapabilities(kotlin.jvm.functions.Function1<? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatOccupancyCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatBeltBuckledCapabilities(kotlin.jvm.functions.Function1<? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatBeltBuckledCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatBackrestAngleCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatBackrestAnglePositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatHeadrestAngleCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatHeadrestAnglePositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatHeadrestForeAftCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatHeadrestForeAftPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatHeadrestHeightCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatHeadrestHeightPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatHeightCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatHeightPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatLumbarForeAftCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatLumbarForeAftPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatLumbarSideSupportCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatLumbarSideSupportPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatTiltCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatTiltPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatDepthCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatDepthPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatForeAftCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatForeAftPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatBeltHeightCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatBeltHeightPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatTemperatureCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatTemperatureCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatVentilationCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatVentilationCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkMoveSeatBackrestAngleCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkMoveSeatHeadrestForeAftCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkMoveSeatBeltHeightCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkMoveSeatHeadrestHeightCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkMoveSeatHeightCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkMoveSeatLumbarForeAftCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkMoveSeatLumbarSideSupportCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkMoveSeatTiltCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkMoveSeatDepthCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkMoveSeatHeadrestAngleCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkMoveSeatForeAftCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void checkSeatMemoryCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentSeatOccupancy(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void moveSeatBackrestAngle(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void moveSeatHeadrestForeAft(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentSeatHeadrestForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void moveSeatHeadrestHeight(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentSeatHeadrestHeightAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void moveSeatHeight(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentSeatHeightPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void moveSeatLumbarForeAft(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentSeatLumbarForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void moveSeatLumbarSideSupport(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentSeatLumbarSideSupportPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void selectSeatMemory(ai.pleos.playground.vehicle.api.model.area.SeatArea, int, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void moveSeatTilt(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentSeatTiltPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void moveSeatDepth(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentSeatDepthPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentSeatForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void moveSeatHeadrestAngle(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentSeatHeadrestAnglePosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentSeatBackrestAnglePosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentSeatBeltBuckledState(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void moveSeatBeltHeight(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getCurrentSeatBeltHeightPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void moveSeatForeAft(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void setHvacSeatTemperature(ai.pleos.playground.vehicle.api.model.area.SeatArea, int, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getHvacSeatTemperature(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void getHvacSeatVentilationState(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void setHvacSeatVentilation(ai.pleos.playground.vehicle.api.model.area.SeatArea, int, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public abstract void registerSeatOccupancy(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatOccupancyListener);
+  public abstract void unregisterSeatOccupancy(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatOccupancyListener);
+  public abstract void registerSeatBackrestAnglePosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatBackrestAnglePositionListener);
+  public abstract void unregisterSeatBackrestAnglePosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatBackrestAnglePositionListener);
+  public abstract void registerSeatBeltBuckledState(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatBeltBuckledStateListener);
+  public abstract void unregisterSeatBeltBuckledState(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatBeltBuckledStateListener);
+  public abstract void registerSeatBeltHeightPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatBeltHeightPositionListener);
+  public abstract void unregisterSeatBeltHeightPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatBeltHeightPositionListener);
+  public abstract void registerSeatDepthPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatDepthPositionListener);
+  public abstract void unregisterSeatDepthPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatDepthPositionListener);
+  public abstract void registerSeatForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatForeAftPositionListener);
+  public abstract void unregisterSeatForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatForeAftPositionListener);
+  public abstract void registerSeatHeadrestAnglePosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeadrestAnglePositionListener);
+  public abstract void unregisterSeatHeadrestAnglePosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeadrestAnglePositionListener);
+  public abstract void registerSeatHeadrestForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeadrestForeAftPositionListener);
+  public abstract void unregisterSeatHeadrestForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeadrestForeAftPositionListener);
+  public abstract void registerSeatHeadrestHeightAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeadrestHeightAftPositionListener);
+  public abstract void unregisterSeatHeadrestHeightAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeadrestHeightAftPositionListener);
+  public abstract void registerSeatHeightPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeightPositionListener);
+  public abstract void unregisterSeatHeightPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeightPositionListener);
+  public abstract void registerSeatLumbarForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatLumbarForeAftPositionListener);
+  public abstract void unregisterSeatLumbarForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatLumbarForeAftPositionListener);
+  public abstract void registerSeatLumbarSideSupportPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatLumbarSideSupportPositionListener);
+  public abstract void unregisterSeatLumbarSideSupportPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatLumbarSideSupportPositionListener);
+  public abstract void registerSeatTiltPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatTiltPositionListener);
+  public abstract void unregisterSeatTiltPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatTiltPositionListener);
+  public abstract void registerHvacSeatTemperature(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.HvacSeatTemperatureListener);
+  public abstract void unregisterHvacSeatTemperature(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.HvacSeatTemperatureListener);
+  public abstract void registerHvacSeatVentilation(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.HvacSeatVentilationListener);
+  public abstract void unregisterHvacSeatVentilation(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.HvacSeatVentilationListener);
+}
+Compiled from "SourceFile"
+public final class ai.pleos.playground.vehicle.api.implement.BrakeImpl implements ai.pleos.playground.vehicle.api.Brake {
+  public ai.pleos.playground.vehicle.api.implement.BrakeImpl(ai.pleos.playground.vehicle.service.b);
+  public void checkBrakePedalStatusCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentBrakePedalStatus(kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void registerBrakePedalStatus(ai.pleos.playground.vehicle.listener.BrakePedalStatusListener);
+  public void unregisterBrakePedalStatus(ai.pleos.playground.vehicle.listener.BrakePedalStatusListener);
+}
+Compiled from "SourceFile"
+public final class ai.pleos.playground.vehicle.api.implement.CarInfoImpl implements ai.pleos.playground.vehicle.api.CarInfo {
+  public ai.pleos.playground.vehicle.api.implement.CarInfoImpl(ai.pleos.playground.vehicle.service.b);
+  public void checkCRNInfoCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkVINInfoCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getVINInfo(kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCRNInfo(kotlin.jvm.functions.Function1<? super java.lang.String, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCapabilityInfo(kotlin.jvm.functions.Function1<? super java.util.Map<java.lang.String, ai.pleos.playground.vehicle.data.CapabilityConfig<java.lang.Object>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+}
+Compiled from "SourceFile"
+public final class ai.pleos.playground.vehicle.api.implement.GearImpl implements ai.pleos.playground.vehicle.api.Gear {
+  public ai.pleos.playground.vehicle.api.implement.GearImpl(ai.pleos.playground.vehicle.service.b);
+  public void getCurrentGearSelectionState(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.constant.control.VehicleGear, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void registerGearSelection(ai.pleos.playground.vehicle.listener.GearSelectionListener);
+  public void unregisterGearSelection(ai.pleos.playground.vehicle.listener.GearSelectionListener);
+}
+Compiled from "SourceFile"
+public final class ai.pleos.playground.vehicle.api.implement.OdometerImpl implements ai.pleos.playground.vehicle.api.Odometer {
+  public ai.pleos.playground.vehicle.api.implement.OdometerImpl(ai.pleos.playground.vehicle.service.b);
+  static void b(ai.pleos.playground.vehicle.api.implement.OdometerImpl, ai.pleos.playground.vehicle.constant.control.TripStatisticType, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  static void a(ai.pleos.playground.vehicle.api.implement.OdometerImpl, ai.pleos.playground.vehicle.constant.control.TripStatisticType, kotlin.jvm.functions.Function1, kotlin.jvm.functions.Function1, int, java.lang.Object);
+  public static final ai.pleos.playground.vehicle.service.b a(ai.pleos.playground.vehicle.api.implement.OdometerImpl);
+  public void checkCurrentDistanceDrivenCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentDistanceDriven(kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkTripDrivingTimeCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkTripCurrentDrivingTimeCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkTripCumulativeDrivingTimeCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkTripSinceRefillDrivingTimeCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getTripCurrentDrivingTime(kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getTripCumulativeDrivingTime(kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getTripSinceRefillDrivingTime(kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkTripDrivingDistanceCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkTripCurrentDrivingDistanceCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkTripInstantaneousDrivingDistanceCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkTripCumulativeDrivingDistanceCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkTripSinceRefillDrivingDistanceCapabilities(kotlin.jvm.functions.Function1<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getTripCurrentDrivingDistance(kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getTripInstantaneousDrivingDistance(kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getTripCumulativeDrivingDistance(kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getTripSinceRefillDrivingDistance(kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void setRangeRemainingDistance(float, kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getRangeRemainingDistance(kotlin.jvm.functions.Function1<? super java.lang.Float, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void registerRangeRemainingListener(ai.pleos.playground.vehicle.listener.RangeRemainingListener);
+  public void unregisterRangeRemainingListener(ai.pleos.playground.vehicle.listener.RangeRemainingListener);
+  public void registerDistanceDriven(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public void unregisterDistanceDriven(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public void registerTripCurrentDrivingTime(ai.pleos.playground.vehicle.listener.DrivingTimeListener);
+  public void unregisterTripCurrentDrivingTime(ai.pleos.playground.vehicle.listener.DrivingTimeListener);
+  public void registerTripCumulativeDrivingTime(ai.pleos.playground.vehicle.listener.DrivingTimeListener);
+  public void unregisterTripCumulativeDrivingTime(ai.pleos.playground.vehicle.listener.DrivingTimeListener);
+  public void registerTripSinceRefillDrivingTime(ai.pleos.playground.vehicle.listener.DrivingTimeListener);
+  public void unregisterTripSinceRefillDrivingTime(ai.pleos.playground.vehicle.listener.DrivingTimeListener);
+  public void registerTripCurrentDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public void unregisterTripCurrentDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public void registerTripInstantaneousDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public void unregisterTripInstantaneousDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public void registerTripCumulativeDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public void unregisterTripCumulativeDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public void registerTripSinceRefillDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+  public void unregisterTripSinceRefillDrivingDistance(ai.pleos.playground.vehicle.listener.DistanceDrivenListener);
+}
+Compiled from "SourceFile"
+public final class ai.pleos.playground.vehicle.api.implement.SeatImpl implements ai.pleos.playground.vehicle.api.Seat {
+  public ai.pleos.playground.vehicle.api.implement.SeatImpl(ai.pleos.playground.vehicle.service.b);
+  public void checkSeatOccupancyCapabilities(kotlin.jvm.functions.Function1<? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatOccupancyCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatBeltBuckledCapabilities(kotlin.jvm.functions.Function1<? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatBeltBuckledCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatBackrestAngleCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatBackrestAnglePositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatHeadrestAngleCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatHeadrestAnglePositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatHeadrestForeAftCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatHeadrestForeAftPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatHeadrestHeightCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatHeadrestHeightPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatHeightCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatHeightPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatLumbarForeAftCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatLumbarForeAftPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatLumbarSideSupportCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatLumbarSideSupportPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatTiltCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatTiltPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatDepthCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatDepthPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatForeAftCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatForeAftPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatBeltHeightCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatBeltHeightPositionCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatTemperatureCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatTemperatureCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatVentilationCapabilities(kotlin.jvm.functions.Function1<? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatVentilationCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkMoveSeatBackrestAngleCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkMoveSeatHeadrestForeAftCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkMoveSeatBeltHeightCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkMoveSeatHeadrestHeightCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkMoveSeatHeightCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkMoveSeatLumbarForeAftCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkMoveSeatLumbarSideSupportCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkMoveSeatTiltCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkMoveSeatDepthCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkMoveSeatHeadrestAngleCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkMoveSeatForeAftCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.List<ai.pleos.playground.vehicle.api.model.area.SeatArea>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void checkSeatMemoryCapabilities(kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.capability.CapabilityConfig, ? super java.util.Map<ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.api.model.capability.AreaBounds<java.lang.Integer>>, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentSeatOccupancy(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void moveSeatBackrestAngle(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentSeatBackrestAnglePosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentSeatBeltBuckledState(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Boolean, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void moveSeatBeltHeight(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentSeatBeltHeightPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void moveSeatDepth(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentSeatDepthPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void moveSeatForeAft(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentSeatForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void moveSeatHeadrestAngle(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentSeatHeadrestAnglePosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void moveSeatHeadrestForeAft(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentSeatHeadrestForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void moveSeatHeadrestHeight(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentSeatHeadrestHeightAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void moveSeatHeight(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentSeatHeightPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void moveSeatLumbarForeAft(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentSeatLumbarForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void moveSeatLumbarSideSupport(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentSeatLumbarSideSupportPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void selectSeatMemory(ai.pleos.playground.vehicle.api.model.area.SeatArea, int, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void moveSeatTilt(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super ai.pleos.playground.vehicle.constant.control.MoveControl, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getCurrentSeatTiltPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void setHvacSeatTemperature(ai.pleos.playground.vehicle.api.model.area.SeatArea, int, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void setHvacSeatVentilation(ai.pleos.playground.vehicle.api.model.area.SeatArea, int, kotlin.jvm.functions.Function2<? super ai.pleos.playground.vehicle.api.model.area.SeatArea, ? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getHvacSeatTemperature(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void getHvacSeatVentilationState(ai.pleos.playground.vehicle.api.model.area.SeatArea, kotlin.jvm.functions.Function1<? super java.lang.Integer, kotlin.Unit>, kotlin.jvm.functions.Function1<? super java.lang.Exception, kotlin.Unit>);
+  public void registerSeatOccupancy(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatOccupancyListener);
+  public void unregisterSeatOccupancy(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatOccupancyListener);
+  public void registerSeatBackrestAnglePosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatBackrestAnglePositionListener);
+  public void unregisterSeatBackrestAnglePosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatBackrestAnglePositionListener);
+  public void registerSeatBeltBuckledState(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatBeltBuckledStateListener);
+  public void unregisterSeatBeltBuckledState(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatBeltBuckledStateListener);
+  public void registerSeatBeltHeightPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatBeltHeightPositionListener);
+  public void unregisterSeatBeltHeightPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatBeltHeightPositionListener);
+  public void registerSeatDepthPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatDepthPositionListener);
+  public void unregisterSeatDepthPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatDepthPositionListener);
+  public void registerSeatForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatForeAftPositionListener);
+  public void unregisterSeatForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatForeAftPositionListener);
+  public void registerSeatHeadrestAnglePosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeadrestAnglePositionListener);
+  public void unregisterSeatHeadrestAnglePosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeadrestAnglePositionListener);
+  public void registerSeatHeadrestForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeadrestForeAftPositionListener);
+  public void unregisterSeatHeadrestForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeadrestForeAftPositionListener);
+  public void registerSeatHeadrestHeightAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeadrestHeightAftPositionListener);
+  public void unregisterSeatHeadrestHeightAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeadrestHeightAftPositionListener);
+  public void registerSeatHeightPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeightPositionListener);
+  public void unregisterSeatHeightPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatHeightPositionListener);
+  public void registerSeatLumbarForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatLumbarForeAftPositionListener);
+  public void unregisterSeatLumbarForeAftPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatLumbarForeAftPositionListener);
+  public void registerSeatLumbarSideSupportPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatLumbarSideSupportPositionListener);
+  public void unregisterSeatLumbarSideSupportPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatLumbarSideSupportPositionListener);
+  public void registerSeatTiltPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatTiltPositionListener);
+  public void unregisterSeatTiltPosition(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.SeatTiltPositionListener);
+  public void registerHvacSeatTemperature(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.HvacSeatTemperatureListener);
+  public void unregisterHvacSeatTemperature(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.HvacSeatTemperatureListener);
+  public void registerHvacSeatVentilation(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.HvacSeatVentilationListener);
+  public void unregisterHvacSeatVentilation(ai.pleos.playground.vehicle.api.model.area.SeatArea, ai.pleos.playground.vehicle.listener.HvacSeatVentilationListener);
+}
+Compiled from "SourceFile"
+public final class ai.pleos.playground.vehicle.api.model.area.SeatArea extends ai.pleos.playground.vehicle.api.model.area.Area {
+  public ai.pleos.playground.vehicle.api.model.area.SeatArea(ai.pleos.playground.vehicle.constant.area.SeatValue...);
+  public final ai.pleos.playground.vehicle.constant.area.SeatValue[] getValues();
+  public boolean equals(java.lang.Object);
+  public int hashCode();
+}
+Compiled from "SourceFile"
+public final class ai.pleos.playground.vehicle.api.model.common.TripStatistics<T> {
+  public ai.pleos.playground.vehicle.api.model.common.TripStatistics(T, T, T, T, java.util.List<? extends T>);
+  public ai.pleos.playground.vehicle.api.model.common.TripStatistics(java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object, java.util.List, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public static ai.pleos.playground.vehicle.api.model.common.TripStatistics copy$default(ai.pleos.playground.vehicle.api.model.common.TripStatistics, java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object, java.util.List, int, java.lang.Object);
+  public ai.pleos.playground.vehicle.api.model.common.TripStatistics();
+  public final T getCurrent();
+  public final T getInstantaneous();
+  public final T getCumulative();
+  public final T getSinceRefill();
+  public final java.util.List<T> getRaw();
+  public final T get(ai.pleos.playground.vehicle.constant.control.TripStatisticType);
+  public final T component1();
+  public final T component2();
+  public final T component3();
+  public final T component4();
+  public final java.util.List<T> component5();
+  public final ai.pleos.playground.vehicle.api.model.common.TripStatistics<T> copy(T, T, T, T, java.util.List<? extends T>);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+Compiled from "SourceFile"
+public final class ai.pleos.playground.vehicle.constant.area.SeatValue extends java.lang.Enum<ai.pleos.playground.vehicle.constant.area.SeatValue> implements ai.pleos.playground.vehicle.constant.area.AreaValue {
+  public static final ai.pleos.playground.vehicle.constant.area.SeatValue ROW_1_LEFT;
+  public static final ai.pleos.playground.vehicle.constant.area.SeatValue ROW_1_CENTER;
+  public static final ai.pleos.playground.vehicle.constant.area.SeatValue ROW_1_RIGHT;
+  public static final ai.pleos.playground.vehicle.constant.area.SeatValue ROW_2_LEFT;
+  public static final ai.pleos.playground.vehicle.constant.area.SeatValue ROW_2_CENTER;
+  public static final ai.pleos.playground.vehicle.constant.area.SeatValue ROW_2_RIGHT;
+  public static final ai.pleos.playground.vehicle.constant.area.SeatValue ROW_3_LEFT;
+  public static final ai.pleos.playground.vehicle.constant.area.SeatValue ROW_3_CENTER;
+  public static final ai.pleos.playground.vehicle.constant.area.SeatValue ROW_3_RIGHT;
+  public static ai.pleos.playground.vehicle.constant.area.SeatValue[] values();
+  public static ai.pleos.playground.vehicle.constant.area.SeatValue valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<ai.pleos.playground.vehicle.constant.area.SeatValue> getEntries();
+  static {};
+  public int getId();
+}
+Compiled from "SourceFile"
+public final class ai.pleos.playground.vehicle.constant.control.TripStatisticType extends java.lang.Enum<ai.pleos.playground.vehicle.constant.control.TripStatisticType> {
+  public static final ai.pleos.playground.vehicle.constant.control.TripStatisticType$Companion Companion;
+  public static final ai.pleos.playground.vehicle.constant.control.TripStatisticType CURRENT;
+  public static final ai.pleos.playground.vehicle.constant.control.TripStatisticType INSTANTANEOUS;
+  public static final ai.pleos.playground.vehicle.constant.control.TripStatisticType CUMULATIVE;
+  public static final ai.pleos.playground.vehicle.constant.control.TripStatisticType SINCE_REFILL;
+  public static ai.pleos.playground.vehicle.constant.control.TripStatisticType[] values();
+  public static ai.pleos.playground.vehicle.constant.control.TripStatisticType valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<ai.pleos.playground.vehicle.constant.control.TripStatisticType> getEntries();
+  static {};
+  public final int getId();
+}
+Compiled from "SourceFile"
+public final class ai.pleos.playground.vehicle.constant.control.VehicleGear extends java.lang.Enum<ai.pleos.playground.vehicle.constant.control.VehicleGear> {
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear$Companion Companion;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_UNKNOWN;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_NEUTRAL;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_REVERSE;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_PARK;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_DRIVE;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_1;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_2;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_3;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_4;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_5;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_6;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_7;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_8;
+  public static final ai.pleos.playground.vehicle.constant.control.VehicleGear GEAR_9;
+  public static ai.pleos.playground.vehicle.constant.control.VehicleGear[] values();
+  public static ai.pleos.playground.vehicle.constant.control.VehicleGear valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<ai.pleos.playground.vehicle.constant.control.VehicleGear> getEntries();
+  static {};
+  public final int getId$Vehicle_release();
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.BrakePedalStatusListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onBrakePedalStatusUpdated(java.lang.Boolean);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.GearSelectionListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSelected(ai.pleos.playground.vehicle.constant.control.VehicleGear);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.HvacSeatTemperatureListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onHvacSeatTemperatureUpdated(java.lang.Integer);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.HvacSeatVentilationListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onHvacSeatVentilationUpdated(java.lang.Integer);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatAirbagDeployedListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatAirbagDeployUpdated(java.lang.Boolean);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatAirbagEnabledListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatAirbagEnabledUpdated(java.lang.Boolean);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatBackrestAnglePositionListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatBackrestAnglePositionUpdated(java.lang.Integer);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatBeltBuckledStateListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatBeltBuckledStateUpdated(java.lang.Boolean);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatBeltHeightPositionListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatBeltHeightPositionUpdated(java.lang.Integer);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatBeltNotBuckledWarningListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatBeltNotBuckledWarningUpdated(java.lang.Boolean);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatDepthPositionListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatDepthPositionUpdated(java.lang.Integer);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatForeAftPositionListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatForeAftPositionUpdated(java.lang.Integer);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatHeadrestAnglePositionListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatHeadrestAnglePositionUpdated(java.lang.Integer);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatHeadrestForeAftPositionListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatHeadrestForeAftPositionUpdated(java.lang.Integer);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatHeadrestHeightAftPositionListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatHeadrestHeightAftPositionUpdated(java.lang.Integer);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatHeightPositionListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatHeightPositionUpdated(java.lang.Integer);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatLumbarForeAftPositionListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatLumbarForeAftPositionUpdated(java.lang.Integer);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatLumbarSideSupportPositionListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatLumbarSideSupportPositionUpdated(java.lang.Integer);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatOccupancyListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatOccupancyUpdated(java.lang.Boolean);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.SeatTiltPositionListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onSeatTiltPositionUpdated(java.lang.Integer);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.TripDrivingDistanceListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onTripDrivingDistanceUpdated(ai.pleos.playground.vehicle.api.model.common.TripStatistics<java.lang.Float>);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.TripDrivingTimeListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onTripDrivingTimeUpdated(ai.pleos.playground.vehicle.api.model.common.TripStatistics<java.lang.Integer>);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.TripEvEfficiencyListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onTripEvEfficiencyUpdated(ai.pleos.playground.vehicle.api.model.common.TripStatistics<java.lang.Float>);
+}
+Compiled from "SourceFile"
+public interface ai.pleos.playground.vehicle.listener.TripFuelEconomyListener extends ai.pleos.playground.vehicle.listener.VehicleListener {
+  public abstract void onTripFuelEconomyUpdated(ai.pleos.playground.vehicle.api.model.common.TripStatistics<java.lang.Float>);
+}
