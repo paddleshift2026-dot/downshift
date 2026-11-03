@@ -66,4 +66,17 @@ class TripMeterTest {
         assertNull(TripCodec.decode(null))
         assertNull(TripCodec.decode("{nope"))
     }
+
+    @Test
+    fun aCheckpointRemembersWhichWalletItBelongsTo() {
+        val c = TripCheckpoint(startedAtMs = 1_000L, savedAtMs = 11_000L, targetId = "v12", totals = TripTotals(distanceKm = 0.4), demo = true)
+        assertTrue(TripCodec.decode(TripCodec.encode(c))!!.demo)
+    }
+
+    @Test
+    fun anM3CheckpointBelongsToTheRealWallet() {
+        val m3 = TripCodec.encode(TripCheckpoint(startedAtMs = 1_000L, savedAtMs = 11_000L)).replace(",\"demo\":false", "")
+        assertFalse(m3.contains("demo"))
+        assertFalse(TripCodec.decode(m3)!!.demo)
+    }
 }

@@ -25,4 +25,17 @@ class GarageCodecTest {
         assertEquals("na", s.intake) // t3 is not owned
         assertEquals(5, s.tune.pops)
     }
+
+    @Test
+    fun aDemoWalletThatWasNeverSavedStartsAsTheDemoState() {
+        assertEquals(GarageState.DEMO, GarageCodec.decode(null, fallback = GarageState.DEMO))
+        assertEquals(GarageState.DEMO, GarageCodec.decode("", fallback = GarageState.DEMO))
+        assertEquals(GarageState.DEMO, GarageCodec.decode("{nope", fallback = GarageState.DEMO))
+    }
+
+    @Test
+    fun aSavedDemoWalletIsReadLikeAnyOther() {
+        val s = GarageState.DEMO.copy(balance = 600, owned = GarageState.DEMO.owned + "v12", engine = "v12")
+        assertEquals(s, GarageCodec.decode(GarageCodec.encode(s), fallback = GarageState.DEMO))
+    }
 }

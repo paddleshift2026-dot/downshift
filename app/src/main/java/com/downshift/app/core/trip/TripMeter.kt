@@ -94,6 +94,8 @@ data class TripCheckpoint(
     val savedAtMs: Long,
     val targetId: String? = null,
     val totals: TripTotals = TripTotals(),
+    /** True for a trip driven in demo mode: it is settled into the demo wallet. */
+    val demo: Boolean = false,
 )
 
 /** Checkpoints as JSON. Nothing saved or a broken value reads as no trip. */

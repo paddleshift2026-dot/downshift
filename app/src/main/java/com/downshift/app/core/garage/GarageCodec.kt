@@ -13,12 +13,13 @@ object GarageCodec {
 
     fun encode(s: GarageState): String = json.encodeToString(GarageState.serializer(), s)
 
-    fun decode(json: String?): GarageState {
-        if (json.isNullOrBlank()) return GarageState.FIRST_RUN
+    /** [fallback] is what nothing saved or a broken value reads as: a first run, or the demo state for the demo wallet. */
+    fun decode(json: String?, fallback: GarageState = GarageState.FIRST_RUN): GarageState {
+        if (json.isNullOrBlank()) return fallback
         val raw = try {
             this.json.decodeFromString(GarageState.serializer(), json)
         } catch (e: IllegalArgumentException) {
-            return GarageState.FIRST_RUN
+            return fallback
         }
         return clean(raw)
     }
