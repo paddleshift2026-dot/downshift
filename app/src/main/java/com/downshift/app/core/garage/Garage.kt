@@ -1,6 +1,7 @@
 package com.downshift.app.core.garage
 
 import com.downshift.app.core.build.Build
+import com.downshift.app.core.engine.EngineSpec
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -88,5 +89,5 @@ object Garage {
     )
 
     const val MAX_POPS = 5
-    const val MAX_REDLINE_OFFSET = 500
+    const val MAX_REDLINE_OFFSET = EngineSpec.MAX_REDLINE_OFFSET
 }

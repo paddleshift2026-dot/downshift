@@ -75,6 +75,9 @@ object Catalog {
 
     fun part(id: String): Part? = byId[id]
 
+    /** The slot's base part, the one every garage owns. */
+    fun baseOf(category: Category): String = of(category).first { it.id in BASE_IDS }.id
+
     fun idOf(build: Build, category: Category): String = when (category) {
         Category.ENGINE -> engineIds.getValue(build.engine)
         Category.INTAKE -> intakeIds.getValue(build.intake)
