@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -18,7 +19,9 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -46,28 +49,49 @@ internal fun HoldButton(
         modifier.clip(shape).background(background)
             .graphicsLayer()
             .drawBehind { drawRect(fill, size = size.copy(width = size.width * progress.floatValue)) }
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    awaitFirstDown()
-                    if (!on) return@awaitEachGesture
-                    var fired = false
-                    val job = scope.launch {
-                        val start = System.nanoTime()
-                        while (progress.floatValue < 1f) {
-                            progress.floatValue = ((System.nanoTime() - start) / (HOLD_MS * 1e6)).toFloat().coerceAtMost(1f)
-                            delay(16)
-                        }
-                        fired = true
-                        held()
-                    }
-                    val up = waitForUpOrCancellation()
-                    job.cancel()
-                    progress.floatValue = 0f
-                    if (up != null && !fired) short()
-                }
-            },
+            .holdGesture(scope, progress, enabled = { on }, onHeld = { held() }, onShortPress = { short() }),
         content = content,
     )
+}
+
+/**
+ * The ignition gesture on its own: while pressed, [progress] climbs to 1 over HOLD_MS and then [onHeld] fires; let go
+ * early and [onShortPress] does. [onPressed] reports the press starting and ending, also when the button leaves the
+ * screen under the finger (START gives way to STOP once the engine runs). The lambdas are captured once, so pass ones
+ * that read current state.
+ */
+internal fun Modifier.holdGesture(
+    scope: CoroutineScope,
+    progress: MutableFloatState,
+    enabled: () -> Boolean,
+    onHeld: () -> Unit,
+    onShortPress: () -> Unit,
+    onPressed: (Boolean) -> Unit = {},
+): Modifier = pointerInput(Unit) {
+    awaitEachGesture {
+        awaitFirstDown()
+        if (!enabled()) return@awaitEachGesture
+        onPressed(true)
+        var fired = false
+        val job = scope.launch {
+            val start = System.nanoTime()
+            while (progress.floatValue < 1f) {
+                progress.floatValue = ((System.nanoTime() - start) / (HOLD_MS * 1e6)).toFloat().coerceAtMost(1f)
+                delay(16)
+            }
+            fired = true
+            onHeld()
+        }
+        var up: PointerInputChange? = null
+        try {
+            up = waitForUpOrCancellation()
+        } finally {
+            job.cancel()
+            progress.floatValue = 0f
+            onPressed(false)
+        }
+        if (up != null && !fired) onShortPress()
+    }
 }
 
 private const val HOLD_MS = 900L

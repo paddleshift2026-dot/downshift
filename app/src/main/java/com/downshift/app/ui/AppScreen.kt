@@ -15,6 +15,7 @@ import com.downshift.app.DownshiftApp
 import com.downshift.app.core.flow.Screen
 import com.downshift.app.ui.garage.GarageScreen
 import com.downshift.app.ui.onboard.OnboardScreen
+import com.downshift.app.ui.start.StartScreen
 
 /** The app's screens as DriveHost's flow picks them: first run, garage, start, drive, summary. Swapped, not animated. */
 @Composable
@@ -24,7 +25,7 @@ fun AppScreen() {
     when (screen) {
         Screen.ONBOARDING -> OnboardScreen()
         Screen.GARAGE -> GarageScreen()
-        Screen.START -> Placeholder("시동")
+        Screen.START -> StartScreen()
         Screen.DRIVE -> Placeholder("주행")
         Screen.SUMMARY -> Placeholder("주행 결산")
     }
