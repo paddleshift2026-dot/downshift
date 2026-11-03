@@ -15,6 +15,11 @@ class DemoVehicleModel(
     var speedMps: Double = initialMps
         private set
 
+    /** Stops the car where it is (the demo's "arrive" button). */
+    fun halt() {
+        speedMps = 0.0
+    }
+
     fun step(throttle: Double, brake: Double, gear: GearState, dtSec: Double): Double {
         val v = speedMps
         val drives = gear == GearState.DRIVE || gear == GearState.REVERSE

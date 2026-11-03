@@ -5,18 +5,30 @@ import com.downshift.app.core.model.GearState
 import com.downshift.app.core.powertrain.DemoVehicleModel
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.util.Locale
+import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.math.floor
 import kotlin.math.roundToInt
 
 /** One reading of the Virtual Console pedals, 0..1, and when it arrived (wall clock). */
 data class ConsolePedal(val throttle: Double, val brake: Double, val atMs: Long)
 
+/** The demo buttons' moves, sent to the console as a driver would make them there. */
+sealed class ConsoleCommand {
+    data class Gear(val gear: GearState) : ConsoleCommand()
+    data class Accelerator(val pct: Int) : ConsoleCommand()
+    /** Stop where the car is and put it in park. */
+    object Arrive : ConsoleCommand()
+}
+
 /**
  * Emulator demo driving: reads the Pleos Virtual Console pedals (slider or G29) and, because the console has no
- * physics, runs DemoVehicleModel and writes the speed back so the cluster and the AAOS speed follow the pedal.
- * While fast() (the engine is running) it polls every 30 ms, or 40 ms once the pedal has held still for 2 s;
- * otherwise every 200 ms (enough for the speed and the garage's parked check; 100 ms put the idle garage over its
- * 5% CPU budget, M2). On a real car nothing answers on 127.0.0.1:8088, so it only retries once a second and reports
- * nothing.
+ * physics, runs DemoVehicleModel and writes the speed back so the cluster and the AAOS speed follow the pedal. It also
+ * moves the console's odometer on every 0.1 km the demo car covers, so the cluster and the Pleos odometer listener
+ * see the distance as on a real car, and sends the demo buttons' commands (post). While fast() (the engine is running)
+ * it polls every 30 ms, or 40 ms once the pedal has held still for 2 s; otherwise every 200 ms (enough for the speed
+ * and the garage's parked check; 100 ms put the idle garage over its 5% CPU budget, M2). On a real car nothing answers
+ * on 127.0.0.1:8088, so it only retries once a second, reports nothing and drops commands.
  */
 class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Boolean, private val onPedal: (ConsolePedal) -> Unit) {
     private val tag = "DownshiftConsole"
@@ -24,6 +36,11 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
     private var thread: Thread? = null
     private val car = DemoVehicleModel()
     private val buf = ByteArray(64 * 1024) // polling thread only
+    private val commands = ConcurrentLinkedQueue<ConsoleCommand>()
+    // Odometer writing, polling thread only: the console's reading when it connected, and what the demo car added.
+    private var odometerBase: Double? = null
+    private var demoKm = 0.0
+    private var odometerPosted = 0.0
 
     @Volatile var demoPhysics = true
     @Volatile var connected = false
@@ -46,6 +63,11 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
         thread = null
     }
 
+    /** Sent on the polling thread's next turn (any thread may call). */
+    fun post(cmd: ConsoleCommand) {
+        commands += cmd
+    }
+
     private fun loop() {
         var lastNs = System.nanoTime()
         var lastSessionMs = 0L
@@ -57,16 +79,23 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
         var lastChangeMs = 0L
         while (running) {
             val t0 = System.nanoTime()
+            if (connected) sendCommands()
             val body = request("GET", "/vehicle/controls")
             val now = System.currentTimeMillis()
             if (body == null) {
                 if (connected) Log.w(tag, "console stopped answering")
                 connected = false
+                commands.clear()
                 sleepMs(RETRY_MS)
                 lastNs = System.nanoTime()
                 continue
             }
-            if (!connected) Log.i(tag, "console connected")
+            if (!connected) {
+                Log.i(tag, "console connected")
+                odometerBase = request("GET", "/vehicle/state")?.let { number(ODOMETER, it) }
+                demoKm = 0.0
+                odometerPosted = odometerBase?.let { floorTenth(it) } ?: 0.0
+            }
             connected = true
             val accel = number(ACCEL, body) ?: 0.0
             val brake = number(BRAKE, body) ?: 0.0
@@ -98,6 +127,7 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
                     }
                     lastPostMs = now
                 }
+                moveOdometer(car.speedMps * dt / 1000.0)
             }
             val period = when {
                 !fast() -> SLOW_POLL_MS
@@ -133,6 +163,42 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
         }
     }.getOrNull()
 
+    private fun sendCommands() {
+        while (true) {
+            val c = commands.poll() ?: return
+            val paths = when (c) {
+                is ConsoleCommand.Gear -> listOfNotNull(gearName(c.gear)?.let { "/vehicle/gear?gear=$it" })
+                is ConsoleCommand.Accelerator -> listOf("/vehicle/controls?accelerator=${c.pct.coerceIn(0, 100)}")
+                ConsoleCommand.Arrive -> {
+                    car.halt()
+                    demoSpeedMps = 0.0
+                    listOf("/vehicle/controls?accelerator=0", "/vehicle/controls?brake=0", "/vehicle/controls?speed=0", "/vehicle/gear?gear=Park")
+                }
+            }
+            paths.forEach { p -> if (request("POST", p) != null) Log.i(tag, "console $p") else Log.w(tag, "console refused $p") }
+        }
+    }
+
+    /** Adds the demo car's distance and moves the console odometer each time it passes another 0.1 km. */
+    private fun moveOdometer(km: Double) {
+        val base = odometerBase ?: return
+        demoKm += km
+        val reading = floorTenth(base + demoKm)
+        if (reading <= odometerPosted + 1e-6) return
+        val text = String.format(Locale.ROOT, "%.1f", reading)
+        if (request("POST", "/vehicle/odometer?traveled_distance_km=$text") != null) odometerPosted = reading
+    }
+
+    private fun floorTenth(km: Double) = floor(km * 10 + 1e-6) / 10
+
+    private fun gearName(g: GearState) = when (g) {
+        GearState.PARK -> "Park"
+        GearState.REVERSE -> "Reverse"
+        GearState.NEUTRAL -> "Neutral"
+        GearState.DRIVE -> "Drive"
+        GearState.UNKNOWN -> null
+    }
+
     private fun number(re: Regex, body: String) = re.find(body)?.groupValues?.get(1)?.toDoubleOrNull()
 
     private fun sleepMs(ms: Long) {
@@ -154,5 +220,6 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
         const val MAX_POST_MS = 250L
         val ACCEL = Regex("\"accelerator_pct\"\\s*:\\s*([0-9.]+)")
         val BRAKE = Regex("\"brake_pct\"\\s*:\\s*([0-9.]+)")
+        val ODOMETER = Regex("\"traveled_distance_km\"\\s*:\\s*([0-9.]+)")
     }
 }

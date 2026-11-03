@@ -17,6 +17,17 @@ import kotlinx.coroutines.flow.SharedFlow
 sealed class DemoCommand {
     /** Garage moves for rehearsals and screenshots: add, reset, unlock, equip, preview or tab. */
     data class GarageAction(val action: String, val part: String? = null, val points: Int? = null, val tab: String? = null) : DemoCommand()
+    /** Trip and situation events the emulator's navigation cannot send, plus the flow's buttons, for rehearsals and checks. */
+    data class Drive(
+        val event: String,
+        val value: String? = null,
+        val kph: Int? = null,
+        val m: Int? = null,
+        val len: Int? = null,
+        val dir: String? = null,
+        val road: String? = null,
+        val to: String? = null,
+    ) : DemoCommand()
     /** Manual throttle 0..1; null clears it so the console pedal or the estimate drives again. */
     data class Throttle(val value: Double?) : DemoCommand()
     data class Focus(val mode: FocusMode) : DemoCommand()
@@ -61,6 +72,12 @@ object DemoBus {
  * adb shell am broadcast -n com.downshift.app/.adapters.demo.DemoReceiver --es cmd start
  *   garage:    garage --es action add [--ei points 1000] | garage --es action reset (the demo state)
  *              garage --es action unlock|equip|preview --es part ID | garage --es action tab --es tab engine|intake|exhaust|trans|tune
+ *   drive:     drive --es event agree | screen --es to garage|start
+ *              drive --es event limit --ei kph 50 (0 = unknown) | camera --ei kph 50 --ei m 300
+ *              drive --es event section --ei kph 80 --ei m 100 --ei len 1000 | school --ei m 150 [--ei kph 30]
+ *              drive --es event turn --es dir left|right [--es road highway] --ei m 120
+ *              drive --es event quiet --es value on|off | guide | music | mute --es value on|off
+ *              drive --es event lapse --ei value 20 (1 = off) | pleos --es value off|auto
  *   sound lab: start | stop | throttle --ef value 0..1 | throttle --es value clear
  *              build [--es engine I4|V8|V12] [--es intake NA|TURBO1|TURBO2|TURBO3|SUPERCHARGER] [--es exhaust STOCK|SPORT|TRACK]
  *                    [--es trans AT|DCT|MT] [--ef pops 0..1] [--ei redline -500..500] [--ef volume 0..1]
@@ -79,6 +96,16 @@ class DemoReceiver : BroadcastReceiver() {
                 part = intent.getStringExtra("part"),
                 points = if (intent.hasExtra("points")) intent.getIntExtra("points", 1000) else null,
                 tab = intent.getStringExtra("tab"),
+            )
+            "drive" -> DemoCommand.Drive(
+                event = intent.getStringExtra("event") ?: return,
+                value = value?.toString(),
+                kph = intOrNull(intent, "kph"),
+                m = intOrNull(intent, "m"),
+                len = intOrNull(intent, "len"),
+                dir = intent.getStringExtra("dir"),
+                road = intent.getStringExtra("road"),
+                to = intent.getStringExtra("to"),
             )
             "throttle" -> DemoCommand.Throttle(if (value == "clear") null else (value as? Number)?.toDouble() ?: 0.0)
             "start" -> DemoCommand.EngineStart
@@ -107,6 +134,8 @@ class DemoReceiver : BroadcastReceiver() {
         Log.i("DownshiftDemo", "command $cmd -> $command")
         DemoBus.post(command)
     }
+
+    private fun intOrNull(intent: Intent, key: String): Int? = if (intent.hasExtra(key)) intent.getIntExtra(key, 0) else null
 
     private inline fun <reified E : Enum<E>> enumExtra(intent: Intent, key: String): E? =
         intent.getStringExtra(key)?.let { s -> enumValues<E>().firstOrNull { it.name.equals(s, ignoreCase = true) } }

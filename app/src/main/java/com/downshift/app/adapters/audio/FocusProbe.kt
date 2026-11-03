@@ -3,14 +3,10 @@ package com.downshift.app.adapters.audio
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
-import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioPlaybackConfiguration
-import android.media.AudioTrack
 import android.util.Log
 import com.downshift.app.core.probe.ProbeLedger
-import kotlin.math.PI
-import kotlin.math.sin
 
 enum class FocusMode { NONE, GAME, MEDIA, SONIFICATION }
 
@@ -24,6 +20,7 @@ fun FocusMode.trackUsage(): Int = when (this) {
 /** Audio focus experiments: what happens to the engine track when guidance speaks or music plays. */
 class FocusProbe(context: Context, private val ledger: ProbeLedger) {
     private val tag = "DownshiftAudio"
+    private val appContext = context.applicationContext
     private val audio = context.getSystemService(AudioManager::class.java)
     private var request: AudioFocusRequest? = null
 
@@ -60,36 +57,7 @@ class FocusProbe(context: Context, private val ledger: ProbeLedger) {
     }
 
     /** A 1.5 s tone with navigation-guidance usage and may-duck focus, standing in for the navi voice. */
-    fun playGuidance() {
-        Thread({
-            try {
-                val rate = 48_000
-                val tone = FloatArray(rate * 3 / 2) { i -> (0.5 * sin(2 * PI * 880.0 * i / rate)).toFloat() }
-                val attrs = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
-                val focus = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK).setAudioAttributes(attrs).build()
-                ledger.record("audio.guide", "요청 ${grantName(audio.requestAudioFocus(focus))}", now())
-                val track = AudioTrack.Builder()
-                    .setAudioAttributes(attrs)
-                    .setAudioFormat(
-                        AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_FLOAT).setSampleRate(rate)
-                            .setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build(),
-                    )
-                    .setTransferMode(AudioTrack.MODE_STATIC)
-                    .setBufferSizeInBytes(tone.size * 4)
-                    .build()
-                track.write(tone, 0, tone.size, AudioTrack.WRITE_BLOCKING)
-                track.play()
-                Thread.sleep(1_700)
-                track.stop()
-                track.release()
-                audio.abandonAudioFocusRequest(focus)
-            } catch (e: Exception) {
-                Log.w(tag, "guidance tone: ${e.message}")
-            }
-        }, "DownshiftGuide").start()
-    }
+    fun playGuidance() = GuidanceTone.guidance(appContext) { r -> ledger.record("audio.guide", "요청 ${grantName(r)}", now()) }
 
     fun abandon() {
         request?.let { runCatching { audio.abandonAudioFocusRequest(it) } }

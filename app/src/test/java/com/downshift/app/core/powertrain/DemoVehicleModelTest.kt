@@ -50,4 +50,13 @@ class DemoVehicleModelTest {
         repeat(1000) { m.step(1.0, 0.0, GearState.REVERSE, 0.01) }
         assertTrue(m.speedMps <= 10.0 / 3.6 + 1e-6)
     }
+
+    @Test
+    fun haltStopsTheCarAtOnce() {
+        val m = DemoVehicleModel(initialMps = 20.0)
+        m.halt()
+        assertEquals(0.0, m.speedMps, 0.0)
+        m.step(0.0, 0.0, GearState.DRIVE, 0.1)
+        assertEquals(0.0, m.speedMps, 0.0)
+    }
 }
