@@ -4,6 +4,7 @@ import com.downshift.app.core.build.Build
 import com.downshift.app.core.dsp.EngineMixer
 import com.downshift.app.core.engine.EngineSpec
 import com.downshift.app.core.engine.Engines
+import com.downshift.app.core.input.SpeedSmoother
 import com.downshift.app.core.model.DriveInputs
 import com.downshift.app.core.model.FuelKind
 import com.downshift.app.core.pack.LoadedPack
@@ -47,6 +48,7 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
     private val pops = PopScheduler(POP_SEED)
     private val director = SoundDirector(pack.voicing)
     private val mixer = EngineMixer(sampleRate, pack.clips, clipRate = pack.sampleRate)
+    private val speedSmoother = SpeedSmoother()
 
     fun setBuild(build: Build, pack: LoadedPack) = pendingBuild.set(build to pack)
 
@@ -65,7 +67,8 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
     fun renderBlock(inputs: DriveInputs, out: FloatArray, frames: Int) {
         applyPending()
         val dt = frames.toDouble() / sampleRate
-        val events = powertrain.step(inputs, dt)
+        val speed = speedSmoother.step(inputs.speedMps, dt)
+        val events = powertrain.step(if (speed == inputs.speedMps) inputs else inputs.copy(speedMps = speed), dt)
         val s = powertrain.state
         val ind = induction.step(s.rpm, spec.redlineRpm, s.load, dt)
         val popList = pops.step(s.overrun, director.rpmNorm(s.rpm), SoundDirector.popIntensity(build), dt)
