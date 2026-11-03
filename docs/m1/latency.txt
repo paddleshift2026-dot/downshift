@@ -1,0 +1,10 @@
+pedal  30%: console write -> sound 91 ms (app write 61 + buffer 30) | host POST -> sound 174 ms
+pedal  80%: console write -> sound 67 ms (app write 37 + buffer 30) | host POST -> sound 141 ms
+pedal   0%: console write -> sound 78 ms (app write 48 + buffer 30) | host POST -> sound 130 ms
+pedal  60%: console write -> sound 76 ms (app write 46 + buffer 30) | host POST -> sound 128 ms
+pedal   0%: console write -> sound 55 ms (app write 25 + buffer 30) | host POST -> sound 105 ms
+pedal 100%: console write -> sound 50 ms (app write 20 + buffer 30) | host POST -> sound 102 ms
+pedal  20%: console write -> sound 58 ms (app write 28 + buffer 30) | host POST -> sound 115 ms
+pedal   0%: console write -> sound 44 ms (app write 14 + buffer 30) | host POST -> sound 103 ms
+console write -> sound: median 67 ms, max 91 ms, n=8 (target <= 120)
+host POST -> sound (clock offset, +-adb RTT/2): median 128 ms, max 174 ms, n=8 (target <= 120)

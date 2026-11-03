@@ -1,0 +1,1 @@
+app %CPU over 26 samples (1 core = 100): mean 17.5, max 29.0
