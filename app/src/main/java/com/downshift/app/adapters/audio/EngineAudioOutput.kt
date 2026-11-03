@@ -16,15 +16,15 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
- * Plays an EngineRuntime through a low-latency AudioTrack: each burst, the audio thread takes the newest inputs,
- * renders one block and writes it, so a pedal change is heard about two bursts later. Audio focus is never
- * requested (M0: playback is not muted without it) and the usage is GAME. inputAtMs() is when the pedal value in use
- * arrived (0 if unknown); it feeds the latency statistics.
+ * Plays an EngineRuntime through a low-latency AudioTrack: each burst, the audio thread takes the newest inputs
+ * (inputs() gets the block's length in seconds), renders one block and writes it, so a pedal change is heard about
+ * two bursts later. Audio focus is never requested (M0: playback is not muted without it) and the usage is GAME.
+ * inputAtMs() is when the pedal value in use arrived (0 if unknown); it feeds the latency statistics.
  */
 class EngineAudioOutput(
     context: Context,
     private val runtime: EngineRuntime,
-    private val inputs: () -> DriveInputs,
+    private val inputs: (blockSec: Double) -> DriveInputs,
     private val inputAtMs: () -> Long = { 0L },
 ) {
     private val tag = "DownshiftAudio"
@@ -64,10 +64,11 @@ class EngineAudioOutput(
         thread = Thread({
             Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
             val buf = FloatArray(burst)
+            val blockSec = burst.toDouble() / rate
             var lastThrottle = Double.NaN
             try {
                 while (running) {
-                    val inp = inputs()
+                    val inp = inputs(blockSec)
                     runtime.renderBlock(inp, buf, burst)
                     record(buf, burst)
                     track.write(buf, 0, burst, AudioTrack.WRITE_BLOCKING)
