@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,12 +18,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.downshift.app.ui.garage.GarageScreen
 import com.downshift.app.ui.ProbeScreen
 import com.downshift.app.ui.SoundLabScreen
 import com.downshift.app.ui.Faint
@@ -48,24 +51,27 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** Sound lab first; the M0 probe stays one tab away and only runs while shown. */
+/**
+ * The garage first; the sound lab and the M0 probe stay behind a slim development row and only run while shown.
+ */
 @Composable
 private fun Tabs() {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     Column(Modifier.fillMaxSize().background(Ground)) {
-        Row(Modifier.padding(start = 24.dp, top = 16.dp), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
-            listOf("사운드 랩", "프로브").forEachIndexed { i, title ->
+        Row(Modifier.height(40.dp).padding(start = 48.dp), horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
+            listOf("개러지", "사운드 랩", "프로브").forEachIndexed { i, title ->
                 Text(
                     title,
                     color = if (i == tab) Heat else Faint,
-                    fontSize = 24.sp,
+                    fontSize = 17.sp,
                     fontWeight = if (i == tab) FontWeight.Bold else FontWeight.Normal,
                     modifier = Modifier.clickable { tab = i },
                 )
             }
         }
         when (tab) {
-            0 -> SoundLabScreen()
+            0 -> GarageScreen()
+            1 -> SoundLabScreen()
             else -> ProbeScreen()
         }
     }

@@ -105,8 +105,12 @@ private fun Gauges(vm: SoundLabViewModel, c: LabConfig) {
     val line = TextStyle(color = Muted, fontSize = 18.sp)
     val small = TextStyle(color = Faint, fontSize = 16.sp)
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-        HoldButton(label = if (running) "STOP" else "START", color = if (running) Faint else Heat, enabled = c.ready) {
-            if (running) vm.stop() else vm.start()
+        val color = if (running) Faint else Heat
+        HoldButton(
+            Modifier.size(width = 200.dp, height = 88.dp), enabled = c.ready, shape = RoundedCornerShape(44.dp),
+            background = color.copy(alpha = 0.2f), fill = color.copy(alpha = 0.6f), onHeld = { if (running) vm.stop() else vm.start() },
+        ) {
+            Text(if (running) "STOP" else "START", Modifier.align(Alignment.Center), color = Ink, fontSize = 28.sp, fontWeight = FontWeight.Bold)
         }
         Spacer(
             Modifier.fillMaxWidth().height(140.dp).drawBehind {
@@ -209,37 +213,3 @@ private fun ManualPedal(vm: SoundLabViewModel) {
 
 @Composable
 private fun heatSlider() = SliderDefaults.colors(thumbColor = Heat, activeTrackColor = Heat, inactiveTrackColor = Panel)
-
-/** Fires once the press has been held for HOLD_MS, like the ignition in the design. */
-@Composable
-private fun HoldButton(label: String, color: Color, enabled: Boolean, onHeld: () -> Unit) {
-    var progress by remember { mutableFloatStateOf(0f) }
-    val scope = rememberCoroutineScope()
-    val held by rememberUpdatedState(onHeld)
-    val on by rememberUpdatedState(enabled)
-    Box(
-        Modifier.size(width = 200.dp, height = 88.dp).clip(RoundedCornerShape(44.dp)).background(color.copy(alpha = 0.2f))
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    awaitFirstDown()
-                    if (!on) return@awaitEachGesture
-                    val job = scope.launch {
-                        val start = System.nanoTime()
-                        while (progress < 1f) {
-                            progress = ((System.nanoTime() - start) / (HOLD_MS * 1e6)).toFloat().coerceAtMost(1f)
-                            delay(16)
-                        }
-                        held()
-                    }
-                    waitForUpOrCancellation()
-                    job.cancel()
-                    progress = 0f
-                }
-            },
-    ) {
-        Box(Modifier.fillMaxHeight().fillMaxWidth(progress).background(color.copy(alpha = 0.6f)))
-        Text(label, Modifier.align(Alignment.Center), color = Ink, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-private const val HOLD_MS = 900L
