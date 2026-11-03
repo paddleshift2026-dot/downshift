@@ -10,6 +10,8 @@ import com.downshift.app.core.engine.Engines
 import com.downshift.app.core.model.DriveInputs
 import com.downshift.app.core.model.FuelKind
 import com.downshift.app.core.model.GearState
+import com.downshift.app.core.pack.LoadedPack
+import com.downshift.app.core.pack.ProceduralPack
 import com.downshift.app.core.pack.SynthPack
 import com.downshift.app.core.powertrain.DemoVehicleModel
 import org.junit.Assert.assertEquals
@@ -23,9 +25,9 @@ class ScenarioRenderTest {
     private val block = 512
 
     /** Off, start, idle, rev to the limiter in P, release, pull through the gears, lift, brake, park, stop. */
-    private fun render(engine: EngineId): Pair<FloatArray, List<Telemetry>> {
+    private fun render(engine: EngineId, pack: (EngineId) -> LoadedPack = { SynthPack.build(Engines.spec(it), fs) }): Pair<FloatArray, List<Telemetry>> {
         val build = Build(engine, IntakePart.TURBO2, ExhaustPart.SPORT, TransmissionPart.DCT, pops = 0.8)
-        val rt = EngineRuntime(SynthPack.build(Engines.spec(engine), fs), build, FuelKind.EV)
+        val rt = EngineRuntime(pack(engine), build, FuelKind.EV)
         val car = DemoVehicleModel()
         val out = ArrayList<Float>()
         val tele = mutableListOf<Telemetry>()
@@ -79,5 +81,35 @@ class ScenarioRenderTest {
     fun beforeStartingThereIsSilence() {
         val (pcm, _) = render(EngineId.I4)
         assertEquals(0.0, rms(pcm, 0.0, 0.5), 1e-9)
+    }
+
+    private val procedural: (EngineId) -> LoadedPack = { ProceduralPack.build(Engines.spec(it), fs) }
+
+    @Test
+    fun everyEngineRendersAProceduralScenarioWithShiftsAndTheLimiter() {
+        File("build/renders").mkdirs()
+        EngineId.entries.forEach { id ->
+            val (pcm, tele) = render(id, procedural)
+            assertTrue("$id finite", pcm.all { it.isFinite() })
+            assertTrue("$id bounded", pcm.all { it in -1f..1f })
+            assertTrue("$id shifted", tele.maxOf { it.gear } >= 3)
+            assertTrue("$id hit the limiter", tele.any { it.atLimiter })
+            File("build/renders/${id.name.lowercase()}_procedural.wav").writeBytes(WavWriter.pcm16Mono(pcm, pcm.size, fs))
+        }
+    }
+
+    @Test
+    fun theProceduralEngineIsSilentBeforeStartingAndLouderRevvingThanIdling() {
+        val (pcm, _) = render(EngineId.V8, procedural)
+        assertEquals(0.0, rms(pcm, 0.0, 0.5), 1e-9)
+        assertTrue(rms(pcm, 3.5, 4.4) > 1.5 * rms(pcm, 2.3, 3.0))
+    }
+
+    @Test
+    fun theProceduralEngineIsHeardDyingAwayAfterTheStop() {
+        val (pcm, _) = render(EngineId.I4, procedural)
+        // stop() lands at 23.0 s; the crank spins down for a moment, then silence
+        assertTrue(rms(pcm, 23.05, 23.3) > 0.002)
+        assertTrue(rms(pcm, 24.5, 24.9) < 1e-4)
     }
 }

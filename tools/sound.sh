@@ -86,11 +86,12 @@ case "$cmd" in
     "$ADB" logcat -c
     : > "$OUT/latency_host.txt"
     # Each line: value, host send time, and the console's own timestamp of the write (device clock, from its reply).
+    # 2.5 s apart, so every step meets the app's slower steady-pedal polling (the worst case).
     for v in 30 80 0 60 0 100 20 0; do
       t=$(date +%s%3N)
       ts=$(curl -s -m 10 -X POST "$C/vehicle/controls?accelerator=$v" | grep -o '"controls":{[^}]*' | grep -o '"timestamp_ms":[0-9]*' | grep -o '[0-9]*$')
       echo "$v $t ${ts:-0}" >> "$OUT/latency_host.txt"
-      sleep 1
+      sleep 2.5
     done
     "$ADB" logcat -d -s DownshiftAudio 2>/dev/null | tr -d '\r' | grep -o 'pedal applied v=[0-9]* at=[0-9]*' | sed 's/pedal applied v=//; s/ at=/ /' > "$OUT/latency_app.txt"
     python -I - "$OUT/latency_host.txt" "$OUT/latency_app.txt" "${off#* }" "${buf:-0}" <<'PY' | tee "$OUT/latency.txt"

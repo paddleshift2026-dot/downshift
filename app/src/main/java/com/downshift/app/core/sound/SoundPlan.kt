@@ -1,6 +1,7 @@
 package com.downshift.app.core.sound
 
 import com.downshift.app.core.build.ExhaustPart
+import com.downshift.app.core.synth.PulseDrive
 
 /** Which clips an engine pack has and the rpm each loop was recorded at. on = under load, off = coasting. */
 data class Voicing(
@@ -28,8 +29,9 @@ data class SynthVoices(val whistleHz: Double, val whistleGain: Double, val whine
 }
 
 /**
- * What to play for one audio block. master scales the loops, pops and synth voices; loudness scales the loops
- * further with load and rpm. One-shots start once and are not cut by later plans.
+ * What to play for one audio block. master scales the loops, pops, pulse voice and synth voices; loudness scales the
+ * loops further with load and rpm. One-shots start once and are not cut by later plans. pulse drives the real-time
+ * exhaust voice when the engine is procedural (no recorded loops).
  */
 data class SoundPlan(
     val loops: List<LoopVoice>,
@@ -40,6 +42,7 @@ data class SoundPlan(
     val exhaust: ExhaustPart,
     val master: Double,
     val loudness: Double,
+    val pulse: PulseDrive? = null,
 ) {
     companion object {
         val SILENT = SoundPlan(emptyList(), emptyList(), emptyList(), false, SynthVoices.SILENT, ExhaustPart.STOCK, 0.0, 0.0)

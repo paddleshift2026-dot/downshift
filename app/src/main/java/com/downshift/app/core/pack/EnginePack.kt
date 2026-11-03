@@ -14,8 +14,15 @@ data class PackClip(val name: String, val file: String, val rpm: Double? = null)
 @Serializable
 data class EnginePackManifest(val engine: String, val source: String, val license: String = "", val sampleRate: Int, val clips: List<PackClip>)
 
-/** A pack decoded into memory and ready for the mixer. */
-class LoadedPack(val engine: EngineId, val sampleRate: Int, val clips: Map<String, FloatArray>, val voicing: Voicing, val source: String)
+/** A pack decoded into memory and ready for the mixer. A procedural pack has no clips: the pulse voice plays the engine. */
+class LoadedPack(
+    val engine: EngineId,
+    val sampleRate: Int,
+    val clips: Map<String, FloatArray>,
+    val voicing: Voicing,
+    val source: String,
+    val procedural: Boolean = false,
+)
 
 /**
  * Clip names: idle, on_1..on_7 and off_1..off_7 (1 = idle_low … 7 = very_high in the slaczky packs),

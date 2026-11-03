@@ -46,12 +46,15 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
     private var timbre = Timbre.of(spec.id, exhaust)
     private var cylinderGain = 1.0
 
-    private var crank = 0.0
+    // A resting crank sits between firings, so the first pulse comes after some rotation, not at the first sample.
+    private var crank = REST_DEG
     private var next = 0
     private var lastRpm = 0.0
     private var lastLoad = 0.0
+    private var cranked = 0 // samples since the starter was asked for
 
-    private val active = BooleanArray(MAX_PULSES)
+    // Sounding pulses are packed into [0, count) so the per-sample loop only visits those.
+    private var count = 0
     private val started = BooleanArray(MAX_PULSES)
     private val wait = DoubleArray(MAX_PULSES)
     private val amp = DoubleArray(MAX_PULSES)
@@ -82,7 +85,6 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
         oldPipe = pipe
         pipe = plan(spec, exhaust)
         fadeLeft = FADE
-        if (next >= angles.size) next = 0
     }
 
     fun render(drive: PulseDrive, out: FloatArray, frames: Int) {
@@ -90,7 +92,9 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
         val load0 = lastLoad
         val rpm1 = drive.rpm.coerceAtLeast(0.0)
         val load1 = drive.load.coerceIn(0.0, 1.0)
-        starterGain.rampTo(if (drive.cranking) STARTER_GAIN else 0f, frames)
+        // The starter motor engages a relay's delay after the key.
+        cranked = if (drive.cranking) cranked + frames else 0
+        starterGain.rampTo(if (drive.cranking && cranked > RELAY_MS * fs / 1000) STARTER_GAIN else 0f, frames)
         if (drive.cranking) {
             starter.freqHz = starterHz(rpm1)
             starter2.freqHz = 2 * starterHz(rpm1)
@@ -110,12 +114,15 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
             bankIn[1] = 0.0
             turbLp += TURB_COEF * (noise.next() - turbLp)
             val n = turbLp * TURB_NORM
-            var sounding = false
-            for (p in 0 until MAX_PULSES) {
-                if (!active[p]) continue
+            val sounding = count > 0
+            var p = count - 1
+            while (p >= 0) {
                 if (!started[p]) {
                     wait[p] -= 1.0
-                    if (wait[p] > 0.0) continue
+                    if (wait[p] > 0.0) {
+                        p--
+                        continue
+                    }
                     val t0 = -wait[p]
                     rise[p] = riseK[p].pow(t0)
                     decay[p] = decayK[p].pow(t0)
@@ -125,8 +132,8 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
                 rise[p] *= riseK[p]
                 decay[p] *= decayK[p]
                 bankIn[bankOf[p]] += v * (1 - turb[p] + turb[p] * n)
-                if (decay[p] < PULSE_END) active[p] = false
-                sounding = true
+                if (decay[p] < PULSE_END) moveLastTo(p) // already-visited pulses fill the gap, so walking down stays correct
+                p--
             }
             var y = pipe.process(bankIn)
             val old = oldPipe
@@ -183,7 +190,6 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
         val tp = riseMs * ln(1 + decayMs / riseMs)
         val peak = (1 - exp(-tp / riseMs)) * exp(-tp / decayMs)
         val slot = freeSlot()
-        active[slot] = true
         started[slot] = false
         wait[slot] = BASE_LATENCY_MS * fs / 1000 + eventDelay[e] + JITTER_T_MS * fs / 1000 * gauss() - sinceOnset
         amp[slot] = a / peak
@@ -195,12 +201,24 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
     }
 
     private fun freeSlot(): Int {
+        if (count < MAX_PULSES) return count++
         var quietest = 0
-        for (p in 0 until MAX_PULSES) {
-            if (!active[p]) return p
-            if (amp[p] * decay[p] < amp[quietest] * decay[quietest]) quietest = p
-        }
+        for (p in 1 until MAX_PULSES) if (amp[p] * decay[p] < amp[quietest] * decay[quietest]) quietest = p
         return quietest
+    }
+
+    private fun moveLastTo(p: Int) {
+        val last = --count
+        if (p == last) return
+        started[p] = started[last]
+        wait[p] = wait[last]
+        amp[p] = amp[last]
+        rise[p] = rise[last]
+        riseK[p] = riseK[last]
+        decay[p] = decay[last]
+        decayK[p] = decayK[last]
+        turb[p] = turb[last]
+        bankOf[p] = bankOf[last]
     }
 
     /** Sum of three uniforms: close enough to a unit gaussian, and cheap. */
@@ -221,6 +239,7 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
             (runner + bankPath + own) * fs / 1000
         }
         eventGain = DoubleArray(events.size) { 1 + DISP_GAIN * (2 * random.nextDouble() - 1) }
+        next = angles.indexOfFirst { it > crank }.let { if (it < 0) 0 else it }
         return ExhaustPath(fs, timbre, FiringPlans.banks(spec.id))
     }
 
@@ -230,7 +249,7 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
         private val idx = IntArray(banks)
         private val feedback = t.combFeedback
         private val bankGain = DoubleArray(banks) { if (it == 0) 1.0 else t.bank1Gain }
-        private val formants = t.formants.map { (hz, db, q) -> Biquad.peaking(fs, hz, db, q) }
+        private val formants = t.formants.map { (hz, db, q) -> Biquad.peaking(fs, hz, db, q) }.toTypedArray()
 
         fun process(input: DoubleArray): Double {
             var mix = 0.0
@@ -243,7 +262,7 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
                 mix += y * bankGain[b]
             }
             var s = mix.toFloat()
-            for (f in formants) s = f.process(s)
+            for (k in formants.indices) s = formants[k].process(s)
             return s.toDouble()
         }
     }
@@ -287,6 +306,8 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
 
     companion object {
         private const val CYCLE_DEG = 720.0
+        private const val REST_DEG = 45.0
+        private const val RELAY_MS = 40.0
         private const val MAX_PULSES = 24
         private const val FADE = 2048
         private const val PULSE_END = 1e-3

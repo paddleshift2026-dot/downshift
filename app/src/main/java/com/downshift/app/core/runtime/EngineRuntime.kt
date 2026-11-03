@@ -1,6 +1,8 @@
 package com.downshift.app.core.runtime
 
 import com.downshift.app.core.build.Build
+import com.downshift.app.core.build.EngineId
+import com.downshift.app.core.build.ExhaustPart
 import com.downshift.app.core.dsp.EngineMixer
 import com.downshift.app.core.engine.EngineSpec
 import com.downshift.app.core.engine.Engines
@@ -13,6 +15,7 @@ import com.downshift.app.core.powertrain.VirtualPowertrain
 import com.downshift.app.core.sound.InductionModel
 import com.downshift.app.core.sound.PopScheduler
 import com.downshift.app.core.sound.SoundDirector
+import com.downshift.app.core.synth.EngineVoice
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
@@ -49,6 +52,12 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
     private val director = SoundDirector(pack.voicing)
     private val mixer = EngineMixer(sampleRate, pack.clips, clipRate = pack.sampleRate)
     private val speedSmoother = SpeedSmoother()
+    private var voice: EngineVoice? = null
+    private var voiceFor: Pair<EngineId, ExhaustPart>? = null
+
+    init {
+        syncVoice()
+    }
 
     fun setBuild(build: Build, pack: LoadedPack) = pendingBuild.set(build to pack)
 
@@ -89,14 +98,35 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
                 mixer.setClips(p.clips, p.sampleRate)
                 director.voicing = p.voicing
             }
+            syncVoice()
         }
         pendingFuel.getAndSet(null)?.let { fuel = it }
         if (pendingStart.getAndSet(false)) powertrain.start()
         if (pendingStop.getAndSet(false)) powertrain.stop()
     }
 
+    /** A procedural pack plays through the pulse voice; a new engine or exhaust reconfigures it (crossfaded). */
+    private fun syncVoice() {
+        director.procedural = pack.procedural
+        if (!pack.procedural) {
+            voice = null
+            voiceFor = null
+        } else {
+            val key = build.engine to build.exhaust
+            val v = voice
+            if (v == null) {
+                voice = EngineVoice(sampleRate, spec, build.exhaust, VOICE_SEED)
+            } else if (key != voiceFor) {
+                v.configure(spec, build.exhaust)
+            }
+            voiceFor = key
+        }
+        mixer.setVoice(voice)
+    }
+
     private companion object {
         const val POP_SEED = 0x5EED_0F_70L
+        const val VOICE_SEED = 0x0E_4612L
 
         fun specFor(build: Build) = Engines.spec(build.engine).withRedlineOffset(build.redlineOffset)
     }

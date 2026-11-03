@@ -20,7 +20,7 @@ import com.downshift.app.core.model.DriveInputs
 import com.downshift.app.core.model.FuelKind
 import com.downshift.app.core.model.GearState
 import com.downshift.app.core.pack.LoadedPack
-import com.downshift.app.core.pack.SynthPack
+import com.downshift.app.core.pack.ProceduralPack
 import com.downshift.app.core.powertrain.LoadEstimator
 import com.downshift.app.core.runtime.EngineRuntime
 import com.downshift.app.core.runtime.Telemetry
@@ -33,6 +33,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import kotlin.math.round
 
 /** What changes rarely: the build and where things come from. */
 data class LabConfig(
@@ -163,7 +164,8 @@ class SoundLabViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun packFor(engine: EngineId): LoadedPack = synchronized(packs) {
-        packs.getOrPut(engine) { AssetPackLoader.load(getApplication(), engine) ?: SynthPack.build(Engines.spec(engine)) }
+        // Licensed recordings when they are installed, otherwise the engine is synthesised in real time.
+        packs.getOrPut(engine) { AssetPackLoader.load(getApplication(), engine) ?: ProceduralPack.build(Engines.spec(engine)) }
     }
 
     private fun handle(c: DemoCommand) {
@@ -191,10 +193,12 @@ class SoundLabViewModel(app: Application) : AndroidViewModel(app) {
         )
         val lat = out?.latency
         fun f(v: Double?) = v?.let { "%.0f".format(it) } ?: "-"
+        // Rounded to what the gauges show, so a steady engine publishes nothing new and nothing redraws.
+        val t = rt?.telemetry ?: Telemetry.OFF
         _live.value = LabLive(
-            telemetry = rt?.telemetry ?: Telemetry.OFF,
-            speedKph = lastInputs.speedMps * 3.6,
-            throttle = lastInputs.throttle,
+            telemetry = t.copy(rpm = round(t.rpm / 10) * 10, load = round(t.load * 100) / 100, boost = round(t.boost * 100) / 100),
+            speedKph = round(lastInputs.speedMps * 3.6),
+            throttle = round(lastInputs.throttle * 100) / 100,
             source = lastSource,
             manual = manual != null,
             latency = if (lat == null || lat.count == 0) "" else "페달→소리 p50 ${f(lat.p50())} / p95 ${f(lat.p95())} ms (n=${lat.count})",

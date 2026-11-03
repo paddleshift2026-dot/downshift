@@ -27,7 +27,7 @@ object AssetPackLoader {
         val text = try {
             assets.open("$dir/manifest.json").bufferedReader().use { it.readText() }
         } catch (e: FileNotFoundException) {
-            Log.i(TAG, "no pack in assets/$dir, using the synth pack")
+            Log.i(TAG, "no pack in assets/$dir, synthesising the engine in real time")
             return null
         }
         return try {

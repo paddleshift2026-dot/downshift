@@ -5,6 +5,8 @@ import com.downshift.app.core.build.ExhaustPart
 import com.downshift.app.core.sound.OneShot
 import com.downshift.app.core.sound.Pop
 import com.downshift.app.core.sound.SoundPlan
+import com.downshift.app.core.synth.EngineVoice
+import com.downshift.app.core.synth.PulseDrive
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.exp
@@ -24,6 +26,7 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
     private var clipRateHz = clipRate
     private var clipStep = clipRate / fs
     private var clipMap: Map<String, FloatArray> = emptyMap()
+    private var pulseVoice: EngineVoice? = null
     private var voiceByName = HashMap<String, LoopVoiceState>()
     private var voices = ArrayList<LoopVoiceState>()
     private val shots = Array(MAX_SHOTS) { ShotVoice() }
@@ -67,10 +70,20 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
         for (s in shots) s.clip = null
     }
 
+    /** The real-time exhaust voice of a procedural engine, or null for recorded loops. */
+    fun setVoice(voice: EngineVoice?) {
+        pulseVoice = voice
+    }
+
     fun render(plan: SoundPlan, out: FloatArray, frames: Int) {
         ensureCapacity(frames)
         java.util.Arrays.fill(bus, 0, frames, 0f)
         renderLoops(plan, frames)
+        pulseVoice?.let { v ->
+            // Rendered even without a plan drive so pulses already in flight ring out.
+            v.render(plan.pulse ?: PulseDrive.OFF, scratch, frames)
+            for (i in 0 until frames) bus[i] += scratch[i]
+        }
         startPops(plan.pops, frames)
         renderPops(frames)
         master.rampTo(plan.master.toFloat(), frames)

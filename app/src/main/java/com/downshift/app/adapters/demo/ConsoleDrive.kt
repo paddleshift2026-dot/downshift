@@ -13,7 +13,8 @@ data class ConsolePedal(val throttle: Double, val brake: Double, val atMs: Long)
 /**
  * Emulator demo driving: reads the Pleos Virtual Console pedals (slider or G29) and, because the console has no
  * physics, runs DemoVehicleModel and writes the speed back so the cluster and the AAOS speed follow the pedal.
- * It polls every 30 ms while fast() (the engine is running) and every 100 ms otherwise. On a real car nothing answers
+ * While fast() (the engine is running) it polls every 30 ms, or 40 ms once the pedal has held still for 2 s;
+ * otherwise every 100 ms. On a real car nothing answers
  * on 127.0.0.1:8088, so it only retries once a second and reports nothing.
  */
 class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Boolean, private val onPedal: (ConsolePedal) -> Unit) {
@@ -51,6 +52,8 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
         var postedKph = -1
         var warned = false
         var lastAccel = Double.NaN
+        var lastBrake = Double.NaN
+        var lastChangeMs = 0L
         while (running) {
             val t0 = System.nanoTime()
             val body = request("GET", "/vehicle/controls")
@@ -66,9 +69,11 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
             connected = true
             val accel = number(ACCEL, body) ?: 0.0
             val brake = number(BRAKE, body) ?: 0.0
-            if (accel != lastAccel) {
-                Log.i(tag, "accel=${accel.toInt()} at=$now")
+            if (accel != lastAccel || brake != lastBrake) {
+                if (accel != lastAccel) Log.i(tag, "accel=${accel.toInt()} at=$now")
                 lastAccel = accel
+                lastBrake = brake
+                lastChangeMs = now
             }
             onPedal(ConsolePedal(accel / 100.0, brake / 100.0, now))
 
@@ -93,7 +98,12 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
                     lastPostMs = now
                 }
             }
-            sleepMs((if (fast()) FAST_POLL_MS else SLOW_POLL_MS) - (System.nanoTime() - t0) / 1_000_000)
+            val period = when {
+                !fast() -> SLOW_POLL_MS
+                now - lastChangeMs < STEADY_MS -> FAST_POLL_MS
+                else -> STEADY_POLL_MS
+            }
+            sleepMs(period - (System.nanoTime() - t0) / 1_000_000)
         }
     }
 
@@ -133,6 +143,8 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
         // Each poll is a new TCP connection (the console sends Connection: close): 20 ms cost about 11% of a core on
         // the emulator, 30 ms about 7%, for at most 10 ms more pedal latency.
         const val FAST_POLL_MS = 30L
+        const val STEADY_POLL_MS = 40L
+        const val STEADY_MS = 2000L
         const val SLOW_POLL_MS = 100L
         const val RETRY_MS = 1000L
         const val SESSION_MS = 2000L

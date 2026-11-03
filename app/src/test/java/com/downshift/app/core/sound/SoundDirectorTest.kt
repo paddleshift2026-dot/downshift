@@ -5,7 +5,9 @@ import com.downshift.app.core.build.TransmissionPart
 import com.downshift.app.core.model.FuelKind
 import com.downshift.app.core.powertrain.PowertrainEvent
 import com.downshift.app.core.powertrain.PowertrainState
+import com.downshift.app.core.synth.PulseDrive
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -93,4 +95,41 @@ class SoundDirectorTest {
         assertTrue(plan(state(1000.0, 0.0), fuel = FuelKind.ICE).master < plan(state(1000.0, 0.0), fuel = FuelKind.EV).master)
         assertEquals(0.5 * plan(state(1000.0, 0.0), build = Build(volume = 1.0)).master, plan(state(1000.0, 0.0), build = Build(volume = 0.5)).master, 1e-9)
     }
+
+    private val procedural = SoundDirector(voicing, procedural = true)
+
+    private fun pulsePlan(s: PowertrainState, events: List<PowertrainEvent> = emptyList()) =
+        procedural.plan(s, events, InductionStep.NONE, emptyList(), Build(), FuelKind.EV)
+
+    @Test
+    fun aProceduralEngineDrivesThePulseVoiceInsteadOfLoops() {
+        val p = pulsePlan(state(3000.0, 0.8))
+        assertTrue(p.loops.isEmpty())
+        assertEquals(PulseDrive(3000.0, 0.8, combustion = true, cranking = false), p.pulse)
+    }
+
+    @Test
+    fun crankingAndTheLimiterCutStopTheFiring() {
+        val crank = pulsePlan(PowertrainState(true, 200.0, 0.0, 0, false, false, false, starting = true, cranking = true)).pulse!!
+        assertFalse(crank.combustion)
+        assertTrue(crank.cranking)
+        assertFalse(pulsePlan(PowertrainState(true, 7000.0, 0.0, 0, false, false, true, false, fuelCut = true)).pulse!!.combustion)
+    }
+
+    @Test
+    fun theStartupFlareFiresHarderThanIdle() {
+        val flare = pulsePlan(PowertrainState(true, 1500.0, 0.0, 0, false, false, false, starting = true)).pulse!!
+        assertTrue("flare load ${flare.load}", flare.load > 0.3)
+    }
+
+    @Test
+    fun aStoppedProceduralEngineIsHeardSpinningDown() {
+        val spinning = pulsePlan(state(500.0, 0.0, running = false))
+        assertTrue(spinning.master > 0.0)
+        assertFalse(spinning.pulse!!.combustion)
+        assertEquals(0.0, pulsePlan(state(0.0, 0.0, running = false)).master, 1e-9)
+    }
+
+    @Test
+    fun aProceduralStartNeedsNoOneShot() = assertTrue(pulsePlan(state(300.0, 0.0), listOf(PowertrainEvent.STARTUP)).shots.isEmpty())
 }

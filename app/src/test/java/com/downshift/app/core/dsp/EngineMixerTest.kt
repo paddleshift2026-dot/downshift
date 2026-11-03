@@ -1,11 +1,15 @@
 package com.downshift.app.core.dsp
 
+import com.downshift.app.core.build.EngineId
 import com.downshift.app.core.build.ExhaustPart
+import com.downshift.app.core.engine.Engines
 import com.downshift.app.core.sound.LoopVoice
 import com.downshift.app.core.sound.OneShot
 import com.downshift.app.core.sound.Pop
 import com.downshift.app.core.sound.SoundPlan
 import com.downshift.app.core.sound.SynthVoices
+import com.downshift.app.core.synth.EngineVoice
+import com.downshift.app.core.synth.PulseDrive
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -125,6 +129,16 @@ class EngineMixerTest {
             System.arraycopy(buf, 0, heard, b * 480, 480)
         }
         assertEquals(4_800.0, heard.count { it > 0.25f }.toDouble(), 30.0)
+    }
+
+    @Test
+    fun aPulseVoiceIsMixedWhenThePlanDrivesIt() {
+        val drive = PulseDrive(3000.0, 0.8, combustion = true, cranking = false)
+        val p = SoundPlan(emptyList(), emptyList(), emptyList(), false, SynthVoices.SILENT, ExhaustPart.SPORT, 1.0, 1.0, drive)
+        val heard = EngineMixer(fs, emptyMap()).apply { setVoice(EngineVoice(fs, Engines.spec(EngineId.I4), ExhaustPart.SPORT)) }
+        assertTrue(rms(heard.renderSeconds(p, 0.5), fs / 4) > 0.01)
+        val muted = EngineMixer(fs, emptyMap()).apply { setVoice(EngineVoice(fs, Engines.spec(EngineId.I4), ExhaustPart.SPORT)) }
+        assertTrue(muted.renderSeconds(p.copy(master = 0.0), 0.3).all { it == 0f })
     }
 
     @Test

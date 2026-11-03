@@ -53,6 +53,8 @@ import com.downshift.app.core.build.ExhaustPart
 import com.downshift.app.core.build.IntakePart
 import com.downshift.app.core.build.TransmissionPart
 import com.downshift.app.core.input.ThrottleSource
+import com.downshift.app.core.pack.ProceduralPack
+import com.downshift.app.core.pack.SynthPack
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -139,7 +141,12 @@ private fun sourceLine(s: LabLive, c: LabConfig): String {
         else -> "차속 추정"
     }
     val console = if (c.consoleConnected) "콘솔 연결" else "콘솔 없음"
-    return "입력 $src ${"%.0f".format(s.throttle * 100)}% · $console · 팩 ${c.packSource} · 연료 ${c.fuel}"
+    val pack = when (c.packSource) {
+        ProceduralPack.SOURCE -> "실시간 합성"
+        SynthPack.SOURCE -> "합성 루프"
+        else -> c.packSource
+    }
+    return "입력 $src ${"%.0f".format(s.throttle * 100)}% · $console · 소리 $pack · 연료 ${c.fuel}"
 }
 
 private fun intakeLabel(p: IntakePart) = when (p) {
