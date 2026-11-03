@@ -7,6 +7,7 @@ import com.downshift.app.core.dsp.GainRamp
 import com.downshift.app.core.dsp.NoiseSource
 import com.downshift.app.core.dsp.SineOsc
 import com.downshift.app.core.engine.EngineSpec
+import kotlin.math.PI
 import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.math.pow
@@ -70,6 +71,8 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
     private var oldPipe: ExhaustPath? = null
     private var fadeLeft = 0
     private var turbLp = 0.0
+    private val turbCoef = 1 - exp(-2 * PI * TURB_HZ / fs)
+    private val turbNorm = sqrt(3.0 * (2 - turbCoef) / turbCoef) // one-pole lowpassed uniform noise back to unit variance
     private var quiet = Int.MAX_VALUE
 
     private val starter = SineOsc(fs)
@@ -112,8 +115,8 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
             turn(rpm, load, drive.combustion)
             bankIn[0] = 0.0
             bankIn[1] = 0.0
-            turbLp += TURB_COEF * (noise.next() - turbLp)
-            val n = turbLp * TURB_NORM
+            turbLp += turbCoef * (noise.next() - turbLp)
+            val n = turbLp * turbNorm
             val sounding = count > 0
             var p = count - 1
             while (p >= 0) {
@@ -128,7 +131,8 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
                     decay[p] = decayK[p].pow(t0)
                     started[p] = true
                 }
-                val v = amp[p] * (1 - rise[p]) * decay[p]
+                val r = 1 - rise[p]
+                val v = amp[p] * r * r * decay[p]
                 rise[p] *= riseK[p]
                 decay[p] *= decayK[p]
                 bankIn[bankOf[p]] += v * (1 - turb[p] + turb[p] * n)
@@ -180,22 +184,24 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
         a *= eventGain[e] * (1 + sigma * gauss())
         if (a <= 0.0) return
         val scale = (REFERENCE_RPM / rpm).pow(RPM_EXPONENT).coerceIn(MIN_SCALE, MAX_SCALE)
-        var riseMs = t.riseMs * scale * (1.8 - 0.8 * bright)
+        // Sharper with load and rpm, but never a click: below ~0.15 ms the upper mids buzz (measured against
+        // realenginesimulator.com, whose high-rpm spectrum falls about 27 dB from the firing note to 2 kHz).
+        var riseMs = maxOf(t.riseMs * scale * (1.2 - 0.3 * bright), t.minRiseMs)
         var decayMs = t.decayMs * scale * (1.15 - 0.3 * bright)
         if (!combustion) {
-            riseMs *= 2.2
-            decayMs *= 1.3
+            riseMs *= 1.8
+            decayMs *= 1.2
         }
-        // Normalise so `a` is the pulse's peak: (1 - e^(-t/rise)) e^(-t/decay) peaks at rise·ln(1 + decay/rise).
-        val tp = riseMs * ln(1 + decayMs / riseMs)
-        val peak = (1 - exp(-tp / riseMs)) * exp(-tp / decayMs)
+        // Normalise so `a` is the pulse's peak: (1 - e^(-t/rise))² e^(-t/decay) peaks at rise·ln(1 + 2·decay/rise).
+        val tp = riseMs * ln(1 + 2 * decayMs / riseMs)
+        val peak = (1 - exp(-tp / riseMs)).pow(2) * exp(-tp / decayMs)
         val slot = freeSlot()
         started[slot] = false
         wait[slot] = BASE_LATENCY_MS * fs / 1000 + eventDelay[e] + JITTER_T_MS * fs / 1000 * gauss() - sinceOnset
         amp[slot] = a / peak
         riseK[slot] = exp(-1000.0 / (riseMs * fs))
         decayK[slot] = exp(-1000.0 / (decayMs * fs))
-        turb[slot] = (t.turbulence * (0.4 + 0.6 * bright) * if (combustion) 1.0 else 1.4).coerceAtMost(0.9)
+        turb[slot] = (t.turbulence * (0.25 + 0.75 * bright) * if (combustion) 1.0 else 1.4).coerceAtMost(0.5)
         bankOf[slot] = eventBank[e]
         fired++
     }
@@ -243,27 +249,86 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
         return ExhaustPath(fs, timbre, FiringPlans.banks(spec.id))
     }
 
-    /** Per bank a tailpipe comb, then the shared body resonances. */
+    /**
+     * Per bank a tailpipe comb whose reflections lose their highs on every round trip (a bare comb rings metallic),
+     * then the shared body resonances, the muffler and cabin lowpass, and a DC blocker (pulses are all positive pressure).
+     */
     private class ExhaustPath(fs: Double, t: Timbre, private val banks: Int) {
         private val buf = Array(banks) { FloatArray((t.tailMs[it] * fs / 1000).toInt().coerceAtLeast(1)) }
         private val idx = IntArray(banks)
+        private val reflected = DoubleArray(banks)
+        private val damp = 1 - exp(-2 * PI * t.combDampHz / fs)
         private val feedback = t.combFeedback
         private val bankGain = DoubleArray(banks) { if (it == 0) 1.0 else t.bank1Gain }
         private val formants = t.formants.map { (hz, db, q) -> Biquad.peaking(fs, hz, db, q) }.toTypedArray()
+        private val muffler = Biquad.lowPass(fs, t.mufflerHz)
+        private val body = Body(fs)
+        private val dcCoef = exp(-2 * PI * DC_HZ / fs)
+        private var dcIn = 0.0
+        private var dcOut = 0.0
 
         fun process(input: DoubleArray): Double {
             var mix = 0.0
             for (b in 0 until banks) {
                 val line = buf[b]
                 val i = idx[b]
-                val y = input[b] + feedback * line[i]
+                reflected[b] += damp * (line[i] - reflected[b])
+                val y = input[b] + feedback * reflected[b]
                 line[i] = y.toFloat()
                 idx[b] = if (i + 1 == line.size) 0 else i + 1
                 mix += y * bankGain[b]
             }
             var s = mix.toFloat()
             for (k in formants.indices) s = formants[k].process(s)
-            return s.toDouble()
+            s = muffler.process(body.process(s))
+            val x = s.toDouble()
+            dcOut = x - dcIn + dcCoef * dcOut
+            dcIn = x
+            return dcOut
+        }
+    }
+
+    /**
+     * A short, dense body around the pulses: four damped delay lines mixed by a Hadamard matrix (a feedback delay
+     * network), decaying in about 90 ms. It blurs each pulse's machine-made edge the way a car's body and
+     * pipework do; realenginesimulator.com gets the same from a convolution.
+     */
+    private class Body(fs: Double) {
+        private val lines = Array(LINES_MS.size) { FloatArray((LINES_MS[it] * fs / 1000).toInt()) }
+        private val idx = IntArray(LINES_MS.size)
+        private val gain = DoubleArray(LINES_MS.size) { Math.pow(10.0, -3.0 * LINES_MS[it] / 1000 / RT60_SEC) }
+        private val lp = DoubleArray(LINES_MS.size)
+        private val damp = 1 - exp(-2 * PI * DAMP_HZ / fs)
+        private val y = DoubleArray(LINES_MS.size)
+
+        fun process(x: Float): Float {
+            for (k in lines.indices) {
+                lp[k] += damp * (lines[k][idx[k]] - lp[k])
+                y[k] = lp[k]
+            }
+            // Hadamard 4×4, scaled to stay lossless before the per-line gains
+            val a = (y[0] + y[1] + y[2] + y[3]) * 0.5
+            val b = (y[0] - y[1] + y[2] - y[3]) * 0.5
+            val c = (y[0] + y[1] - y[2] - y[3]) * 0.5
+            val d = (y[0] - y[1] - y[2] + y[3]) * 0.5
+            write(0, x + gain[0] * a)
+            write(1, x + gain[1] * b)
+            write(2, x + gain[2] * c)
+            write(3, x + gain[3] * d)
+            return (x + WET * (y[0] + y[1] + y[2] + y[3]) * 0.5).toFloat()
+        }
+
+        private fun write(k: Int, v: Double) {
+            val line = lines[k]
+            line[idx[k]] = v.toFloat()
+            idx[k] = if (idx[k] + 1 == line.size) 0 else idx[k] + 1
+        }
+
+        private companion object {
+            val LINES_MS = doubleArrayOf(4.7, 6.3, 8.9, 11.3)
+            const val RT60_SEC = 0.09
+            const val DAMP_HZ = 3000.0
+            const val WET = 0.25
         }
     }
 
@@ -277,32 +342,38 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
         val bank1Gain: Double,
         val tailMs: DoubleArray,
         val combFeedback: Double,
+        val combDampHz: Double,
+        val mufflerHz: Double,
+        val minRiseMs: Double,
         val formants: List<Triple<Double, Double, Double>>,
     ) {
         companion object {
             fun of(id: EngineId, exhaust: ExhaustPart): Timbre {
-                val (riseScale, turbScale, tailScale, comb) = when (exhaust) {
-                    ExhaustPart.STOCK -> listOf(1.3, 0.7, 1.35, -0.15)
-                    ExhaustPart.SPORT -> listOf(1.0, 1.0, 1.0, -0.3)
-                    ExhaustPart.TRACK -> listOf(0.8, 1.3, 0.8, -0.4)
+                // rise scale, turbulence scale, tailpipe length scale, reflection, reflection damping Hz, muffler Hz
+                val (riseScale, turbScale, tailScale, comb, dampHz, mufflerHz) = when (exhaust) {
+                    ExhaustPart.STOCK -> Exhaust(1.25, 0.6, 1.35, -0.15, 1200.0, 2800.0)
+                    ExhaustPart.SPORT -> Exhaust(1.0, 1.0, 1.0, -0.3, 1800.0, 4200.0)
+                    ExhaustPart.TRACK -> Exhaust(0.85, 1.3, 0.8, -0.4, 2600.0, 5000.0)
                 }
                 return when (id) {
                     EngineId.I4 -> Timbre(
-                        0.12 * riseScale, 1.3, 0.35 * turbScale, 0.07, 0.0, 1.0, doubleArrayOf(7.0 * tailScale), comb,
-                        listOf(Triple(95.0, 3.0, 1.2), Triple(380.0, 4.0, 1.4), Triple(1500.0, 3.0, 1.8)),
+                        0.2 * riseScale, 2.0, 0.12 * turbScale, 0.07, 0.0, 1.0, doubleArrayOf(7.0 * tailScale), comb, dampHz, mufflerHz, 0.15,
+                        listOf(Triple(100.0, 4.0, 1.0), Triple(320.0, 2.5, 1.2), Triple(850.0, 1.5, 1.4)),
                     )
                     EngineId.V8 -> Timbre(
-                        0.15 * riseScale, 1.8, 0.3 * turbScale, 0.06, 0.6, 0.85, doubleArrayOf(7.6 * tailScale, 8.4 * tailScale), comb,
-                        listOf(Triple(75.0, 5.0, 1.0), Triple(260.0, 3.0, 1.2), Triple(900.0, 2.0, 1.5)),
+                        0.24 * riseScale, 2.6, 0.1 * turbScale, 0.06, 0.6, 0.85, doubleArrayOf(7.6 * tailScale, 8.4 * tailScale), comb, dampHz, mufflerHz, 0.17,
+                        listOf(Triple(80.0, 5.0, 1.0), Triple(230.0, 3.0, 1.2), Triple(650.0, 1.5, 1.4)),
                     )
                     EngineId.V12 -> Timbre(
-                        0.09 * riseScale, 1.0, 0.25 * turbScale, 0.05, 0.25, 0.95, doubleArrayOf(6.6 * tailScale, 6.9 * tailScale), comb,
-                        listOf(Triple(120.0, 2.0, 1.0), Triple(520.0, 4.0, 1.3), Triple(2000.0, 4.0, 1.6)),
+                        0.17 * riseScale, 1.5, 0.08 * turbScale, 0.05, 0.25, 0.95, doubleArrayOf(6.6 * tailScale, 6.9 * tailScale), comb, dampHz, mufflerHz, 0.11,
+                        listOf(Triple(130.0, 3.0, 1.0), Triple(450.0, 3.0, 1.2), Triple(1200.0, 2.0, 1.4)),
                     )
                 }
             }
         }
     }
+
+    private data class Exhaust(val rise: Double, val turb: Double, val tail: Double, val comb: Double, val dampHz: Double, val mufflerHz: Double)
 
     companion object {
         private const val CYCLE_DEG = 720.0
@@ -325,9 +396,9 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
         private const val RPM_EXPONENT = 0.5
         private const val MIN_SCALE = 0.35
         private const val MAX_SCALE = 1.8
-        private const val TURB_COEF = 0.45
-        private val TURB_NORM = sqrt(3.0 * (2 - TURB_COEF) / TURB_COEF) // one-pole lowpassed uniform noise back to unit variance
+        private const val TURB_HZ = 1400.0
         private const val STARTER_GAIN = 0.05f
+        private const val DC_HZ = 25.0
         private const val QUIET_SAMPLES = 24_000
 
         /** The starter motor's whine rises a little as it gets the engine turning. */

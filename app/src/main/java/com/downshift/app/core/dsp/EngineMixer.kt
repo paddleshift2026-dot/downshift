@@ -10,6 +10,7 @@ import com.downshift.app.core.synth.PulseDrive
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.exp
+import kotlin.math.sin
 import kotlin.math.tan
 
 /**
@@ -137,8 +138,15 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
             slot.gain = (p.gain * POP_LEVEL).toFloat()
             slot.env = 1f
             slot.decay = exp(-4.6 / n).toFloat()
-            slot.coef = (1 - exp(-2 * PI * p.cutoffHz / fs)).toFloat()
+            // A real pop is a low bang with some crack on top, not a burst of hiss: the noise sits an octave and a
+            // bit below the scheduler's cutoff, and a short low thump carries the body.
+            slot.coef = (1 - exp(-2 * PI * p.cutoffHz * POP_CUTOFF_SCALE / fs)).toFloat()
             slot.lp = 0f
+            slot.phase = 0.0
+            slot.step = 2 * PI * (THUMP_HZ + THUMP_SPREAD_HZ * abs(noise.next())) / fs
+            slot.thump = 1f
+            slot.thumpDecay = exp(-1.0 / (THUMP_TAU_SEC * fs)).toFloat()
+            slot.left = maxOf(n, (THUMP_TAU_SEC * 5 * fs).toInt())
         }
     }
 
@@ -149,8 +157,11 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
             v.delay -= i
             while (i < frames && v.left > 0) {
                 v.lp += v.coef * (noise.next() - v.lp)
-                bus[i] += v.lp * v.env * v.gain
+                val bang = THUMP_LEVEL * v.thump * sin(v.phase).toFloat()
+                bus[i] += (v.lp * v.env + bang) * v.gain
                 v.env *= v.decay
+                v.thump *= v.thumpDecay
+                v.phase += v.step
                 v.left--
                 i++
             }
@@ -231,7 +242,7 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
         for (i in 0 until frames) {
             var y = 0f
             val wg = whistleGain.next()
-            if (wg > 0f) y += wg * (0.7f * whistle.next() + 0.3f * whistleAir.bandPass(noise.next()))
+            if (wg > 0f) y += wg * (0.75f * whistle.next() + 0.25f * whistleAir.bandPass(noise.next()))
             val hg = whineGain.next()
             if (hg > 0f) y += hg * (whine.next() + 0.5f * whine2.next())
             if (blowOffEnv >= BLOW_OFF_FLOOR) {
@@ -272,6 +283,10 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
         var decay = 0f
         var coef = 0f
         var lp = 0f
+        var phase = 0.0
+        var step = 0.0
+        var thump = 0f
+        var thumpDecay = 0f
     }
 
     /** A band-pass that can be retuned every block without allocating (topology-preserving state variable filter). */
@@ -310,12 +325,18 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
         const val RATE_STEP = 64
         const val EXHAUST_FADE = 2048
         const val POP_LEVEL = 0.8
-        const val INDUCTION_LEVEL = 0.12
+        const val POP_CUTOFF_SCALE = 0.4
+        const val THUMP_HZ = 70.0
+        const val THUMP_SPREAD_HZ = 60.0
+        const val THUMP_TAU_SEC = 0.012
+        const val THUMP_LEVEL = 0.7f
+        // Turbo and supercharger tones are pure and high, so they read as synthetic when loud; inside a car they are subtle.
+        const val INDUCTION_LEVEL = 0.07
         const val WHISTLE_Q = 6.0
         const val BLOW_OFF_HZ = 2200.0
         const val BLOW_OFF_Q = 0.9
         const val BLOW_OFF_TAU = 0.1
-        const val BLOW_OFF_LEVEL = 0.35f
+        const val BLOW_OFF_LEVEL = 0.25f
         const val BLOW_OFF_FLOOR = 1e-4f
     }
 }
