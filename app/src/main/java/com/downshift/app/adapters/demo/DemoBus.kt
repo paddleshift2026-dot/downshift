@@ -13,8 +13,10 @@ import com.downshift.app.core.build.TransmissionPart
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 
-/** Sound lab and probe commands, posted by the screens or by `adb shell am broadcast` through [DemoReceiver]. */
+/** Garage, sound lab and probe commands, posted by the screens or by `adb shell am broadcast` through [DemoReceiver]. */
 sealed class DemoCommand {
+    /** Garage moves for rehearsals and screenshots: add, reset, unlock, equip, preview or tab. */
+    data class GarageAction(val action: String, val part: String? = null, val points: Int? = null, val tab: String? = null) : DemoCommand()
     /** Manual throttle 0..1; null clears it so the console pedal or the estimate drives again. */
     data class Throttle(val value: Double?) : DemoCommand()
     data class Focus(val mode: FocusMode) : DemoCommand()
@@ -57,6 +59,8 @@ object DemoBus {
 
 /**
  * adb shell am broadcast -n com.downshift.app/.adapters.demo.DemoReceiver --es cmd start
+ *   garage:    garage --es action add [--ei points 1000] | garage --es action reset (the demo state)
+ *              garage --es action unlock|equip|preview --es part ID | garage --es action tab --es tab engine|intake|exhaust|trans|tune
  *   sound lab: start | stop | throttle --ef value 0..1 | throttle --es value clear
  *              build [--es engine I4|V8|V12] [--es intake NA|TURBO1|TURBO2|TURBO3|SUPERCHARGER] [--es exhaust STOCK|SPORT|TRACK]
  *                    [--es trans AT|DCT|MT] [--ef pops 0..1] [--ei redline -500..500] [--ef volume 0..1]
@@ -70,6 +74,12 @@ class DemoReceiver : BroadcastReceiver() {
         @Suppress("DEPRECATION")
         val value = intent.extras?.get("value")
         val command = when (cmd) {
+            "garage" -> DemoCommand.GarageAction(
+                action = intent.getStringExtra("action") ?: return,
+                part = intent.getStringExtra("part"),
+                points = if (intent.hasExtra("points")) intent.getIntExtra("points", 1000) else null,
+                tab = intent.getStringExtra("tab"),
+            )
             "throttle" -> DemoCommand.Throttle(if (value == "clear") null else (value as? Number)?.toDouble() ?: 0.0)
             "start" -> DemoCommand.EngineStart
             "stop" -> DemoCommand.EngineStop

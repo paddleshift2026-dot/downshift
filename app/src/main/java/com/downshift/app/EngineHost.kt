@@ -62,12 +62,14 @@ class EngineHost(private val app: Application) {
     private var runtime: EngineRuntime? = null
     private var output: EngineAudioOutput? = null
     private var wanted = Build() // what the runtime should play: the preview's build during a preview
-    private var engineOn = false // the driver's start and stop; a preview may run the engine without it
     private var startedForPreview = false
     @Volatile private var preview: Preview? = null
 
     /** The driver's build, not the preview's. */
     var build = Build()
+        private set
+    /** The driver's start and stop; a preview may run the engine while this stays off. */
+    var engineOn = false
         private set
     @Volatile var packSource = ""
         private set
