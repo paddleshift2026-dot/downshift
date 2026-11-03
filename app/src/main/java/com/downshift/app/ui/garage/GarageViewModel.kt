@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -56,12 +57,14 @@ fun fittedOf(s: GarageState): Map<Category, String> = Category.entries.associate
  * The garage's state and moves: pick parts, preview them (even locked ones), unlock with points, equip, tune, and the
  * demo buttons. Every change goes through the app's one GarageRepository (saved at once, worked out from its latest
  * state, so a trip's points arriving there are never overwritten), and an equip or tune goes straight to the shared
- * engine. Changes need the car parked; the demo buttons always work. adb (DemoBus) reaches the same moves.
+ * engine. Changes need the car parked; the demo buttons (demo mode only, through DemoHost) always work. adb (DemoBus)
+ * reaches the same moves: add and reset in DemoHost, the taps here.
  */
 class GarageViewModel(app: Application) : AndroidViewModel(app) {
     private val host = (app as DownshiftApp).host
     private val repo = (app as DownshiftApp).garage
     private val drive = (app as DownshiftApp).drive
+    private val demo = (app as DownshiftApp).demo
 
     private val _ui = MutableStateFlow(GarageUi())
     val ui: StateFlow<GarageUi> = _ui.asStateFlow()
@@ -74,6 +77,8 @@ class GarageViewModel(app: Application) : AndroidViewModel(app) {
         _ui.value = GarageUi(state = s, selected = fittedOf(s))
         host.setBuild(Garage.build(s))
         viewModelScope.launch { repo.state.collect { saved -> _ui.update { it.copy(state = saved) } } }
+        // Switching wallets (demo mode) brings another garage: pick its fitted parts.
+        viewModelScope.launch { repo.demo.drop(1).collect { _ui.update { it.copy(selected = fittedOf(repo.state.value), playing = null) } } }
         // The engine's situation is polled five times a second, only while the garage is on screen; unchanged
         // values publish nothing.
         viewModelScope.launch {
@@ -139,14 +144,17 @@ class GarageViewModel(app: Application) : AndroidViewModel(app) {
 
     fun reviewSafety() = drive.reviewSafety()
 
-    fun demoAddPoints(points: Int = DEMO_POINTS) = commit { Garage.addPoints(it, points) }
+    /** Demo mode's +1,000 P, into the demo wallet (DemoHost). */
+    fun demoAddPoints() = demo.addPoints()
 
-    /** The design's demo state, with the cards the PT walks through picked. */
+    /** The design's demo state in the demo wallet, with the cards the PT walks through picked. */
     fun demoReset() {
-        host.cancelAudition()
-        _ui.update { it.copy(selected = DEMO_SELECTION, playing = null) }
-        commit(toEngine = true) { GarageState.DEMO }
+        if (!demo.on.value) return
+        demo.reset()
+        pickDemoCards()
     }
+
+    private fun pickDemoCards() = _ui.update { it.copy(selected = DEMO_SELECTION, playing = null) }
 
     private fun commit(toEngine: Boolean = false, change: (GarageState) -> GarageState) {
         val s = repo.update(change)
@@ -160,11 +168,11 @@ class GarageViewModel(app: Application) : AndroidViewModel(app) {
         _ui.update { it.copy(parked = host.parked, ready = host.ready, engineOn = host.engineOn, packSource = host.packSource) }
     }
 
+    /** adb garage moves that mimic taps on this screen; add and reset change the wallet in DemoHost, with no screen up. */
     private fun handle(c: DemoCommand) {
         if (c !is DemoCommand.GarageAction) return
         when (c.action) {
-            "add" -> demoAddPoints(c.points ?: DEMO_POINTS)
-            "reset" -> demoReset()
+            "reset" -> if (demo.on.value) pickDemoCards()
             "unlock", "equip", "preview" -> {
                 val id = c.part ?: return
                 selectPart(id)
@@ -182,7 +190,6 @@ class GarageViewModel(app: Application) : AndroidViewModel(app) {
 
     companion object {
         const val BUILD_PREVIEW = "build"
-        const val DEMO_POINTS = 1000
         private const val POLL_MS = 200L
         private val DEMO_SELECTION = mapOf(Category.ENGINE to "v8", Category.INTAKE to "t3", Category.EXHAUST to "track", Category.TRANSMISSION to "mt")
         private val TABS = mapOf(

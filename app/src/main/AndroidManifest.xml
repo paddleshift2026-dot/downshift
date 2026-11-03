@@ -42,7 +42,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- Probe automation hook (adb broadcast) used by tools/probe.sh; see adapters/demo/DemoBus.kt -->
-        <receiver android:name=".adapters.demo.DemoReceiver" android:exported="true" />
+        <!-- Rehearsal and check hook (adb broadcast) used by tools/*.sh; see adapters/demo/DemoBus.kt. Only adb's shell
+             and the system hold DUMP, so other apps on the head unit cannot send it demo commands. -->
+        <receiver
+            android:name=".adapters.demo.DemoReceiver"
+            android:exported="true"
+            android:permission="android.permission.DUMP" />
     </application>
 </manifest>

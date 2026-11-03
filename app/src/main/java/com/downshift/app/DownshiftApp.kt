@@ -13,8 +13,12 @@ class DownshiftApp : Application() {
     /** Trips, points and the situation volume; made with the process so the gear is watched with no screen up. */
     val drive: DriveHost by lazy { DriveHost(this, host, garage) }
 
+    /** Demo mode and its wallet; made with the process so adb's demo and garage commands work with no screen up. */
+    val demo: DemoHost by lazy { DemoHost(this, garage, host, drive) }
+
     override fun onCreate() {
         super.onCreate()
         drive
+        demo
     }
 }

@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.SharedFlow
 
 /** Garage, sound lab and probe commands, posted by the screens or by `adb shell am broadcast` through [DemoReceiver]. */
 sealed class DemoCommand {
+    /** Demo mode (PRD feature G): on or off, the dashed demo buttons shown or not, the distance lapse. */
+    data class Demo(val on: Boolean? = null, val buttons: Boolean? = null, val lapse: Int? = null) : DemoCommand()
     /** Garage moves for rehearsals and screenshots: add, reset, unlock, equip, preview or tab. */
     data class GarageAction(val action: String, val part: String? = null, val points: Int? = null, val tab: String? = null) : DemoCommand()
     /** Trip and situation events the emulator's navigation cannot send, plus the flow's buttons, for rehearsals and checks. */
@@ -70,9 +72,13 @@ object DemoBus {
 
 /**
  * adb shell am broadcast -n com.downshift.app/.adapters.demo.DemoReceiver --es cmd start
+ * (the receiver takes broadcasts from adb's shell and the system only: android.permission.DUMP)
+ *   demo:      demo --es value on|off [--es buttons on|off] [--ei lapse 20]
+ *              garage add/reset and the drive injections that change points (limit, camera, section, school, turn,
+ *              lapse) need demo mode on, so the real wallet changes only through real driving (DemoPolicy)
  *   garage:    garage --es action add [--ei points 1000] | garage --es action reset (the demo state)
  *              garage --es action unlock|equip|preview --es part ID | garage --es action tab --es tab engine|intake|exhaust|trans|tune
- *   drive:     drive --es event agree | screen --es to garage|start
+ *   drive:     drive --es event agree | screen --es to garage|start|safety
  *              drive --es event limit --ei kph 50 (0 = unknown) | camera --ei kph 50 --ei m 300
  *              drive --es event section --ei kph 80 --ei m 100 --ei len 1000 | school --ei m 150 [--ei kph 30]
  *              drive --es event turn --es dir left|right [--es road highway] --ei m 120
@@ -91,6 +97,11 @@ class DemoReceiver : BroadcastReceiver() {
         @Suppress("DEPRECATION")
         val value = intent.extras?.get("value")
         val command = when (cmd) {
+            "demo" -> DemoCommand.Demo(
+                on = (value as? String)?.let { it == "on" },
+                buttons = intent.getStringExtra("buttons")?.let { it == "on" },
+                lapse = intOrNull(intent, "lapse"),
+            )
             "garage" -> DemoCommand.GarageAction(
                 action = intent.getStringExtra("action") ?: return,
                 part = intent.getStringExtra("part"),

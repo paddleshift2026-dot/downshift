@@ -139,6 +139,8 @@ frames() {
 cmd="${1:-}"
 # Since M3 the app opens on the first-run safety note until it is agreed to; agree so every check starts in the garage.
 app --es cmd drive --es event agree
+# Since M4 garage add and reset work on the demo wallet only, so the checks run in demo mode.
+app --es cmd demo --es value on --es buttons on
 case "$cmd" in
   flow) flow ;;
   persist) persist ;;

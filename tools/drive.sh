@@ -12,94 +12,11 @@
 #   bash tools/drive.sh cpu       # %CPU (one core = 100) driving with and without the Pleos SDK, the idle garage -> cpu.txt
 #   bash tools/drive.sh music     # a media player with focus beside the idling engine -> music.txt
 set -u
-SDK="${ANDROID_HOME:-$LOCALAPPDATA/Android/Sdk}"
-ADB="$SDK/platform-tools/adb.exe"
-PKG="com.downshift.app"
-RX="$PKG/.adapters.demo.DemoReceiver"
-C="http://127.0.0.1:8088"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OUT="$HERE/../docs/m3"
 mkdir -p "$OUT"
-
-app() { "$ADB" shell am broadcast -n "$RX" "$@" < /dev/null > /dev/null 2>&1; }
-garage() { app --es cmd garage --es action "$@"; }
-drive() { app --es cmd drive --es event "$@"; }
-post() { curl -s -m 5 -X POST "$C$1" -o /dev/null; }
-speed() { curl -s -m 3 "$C/vehicle/controls" | grep -o '"speed_kph":[0-9.]*' | cut -d: -f2 | cut -d. -f1; }
-odometer() { curl -s -m 5 "$C/vehicle/state" | grep -o '"traveled_distance_km":[0-9.]*' | head -1 | cut -d: -f2; }
-pid() { "$ADB" shell pidof "$PKG" < /dev/null | tr -d '\r'; }
-log() { "$ADB" logcat -d -s DownshiftLab < /dev/null | tr -d '\r'; }
-
-# The app's window inside the Pleos home screen, as x1 y1 x2 y2.
-window() {
-  "$ADB" shell dumpsys window windows < /dev/null | tr -d '\r' | grep -o "$PKG/$PKG.MainActivity, frame=\[[0-9,]*\]\[*" | head -1 \
-    | grep -o '[0-9]*,[0-9]*,[0-9]*,[0-9]*' | tr ',' ' '
-}
-
-# Screenshot cropped to the app window -> docs/m3/NAME.png
-shot() {
-  local name="$1" tmp
-  tmp="$(mktemp)"
-  "$ADB" exec-out screencap -p > "$tmp"
-  # shellcheck disable=SC2046
-  python -I - "$tmp" "$OUT/$name.png" $(window) <<'PY'
-import sys
-from PIL import Image
-src, dst = sys.argv[1], sys.argv[2]
-box = tuple(map(int, sys.argv[3:7])) if len(sys.argv) >= 7 else None
-im = Image.open(src).convert("RGB")
-(im.crop(box) if box else im).save(dst, optimize=True)
-PY
-  rm -f "$tmp"
-  echo "  $name.png"
-}
-
-# The centre "x y" of the first node whose text or content description contains $1.
-node() {
-  "$ADB" shell uiautomator dump //sdcard/ui.xml < /dev/null > /dev/null 2>&1
-  "$ADB" shell cat //sdcard/ui.xml < /dev/null | tr '>' '\n' | grep -E "(text|content-desc)=\"[^\"]*$1" | head -1 \
-    | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | grep -o '[0-9]*' | tr '\n' ' ' | awk 'NF == 4 { printf "%d %d", ($1 + $3) / 2, ($2 + $4) / 2 }'
-}
-tap_text() { local xy; xy="$(node "$1")"; if [ -n "$xy" ]; then "$ADB" shell input tap $xy < /dev/null; else echo "  (no '$1' on screen)"; fi; }
-hold_text() { local xy; xy="$(node "$1")"; if [ -n "$xy" ]; then "$ADB" shell input swipe $xy $xy "$2" < /dev/null; else echo "  (no '$1' on screen)"; fi; }
-
-# Holds about TARGET km/h for SECS seconds with the console pedal (and a light brake when far too fast).
-hold_speed() {
-  local target="$1" end=$((SECONDS + $2)) v braking=0
-  while [ "$SECONDS" -lt "$end" ]; do
-    v="$(speed)"; v="${v:-0}"
-    if [ "$v" -gt $((target + 6)) ]; then
-      post "/vehicle/controls?accelerator=0"; [ "$braking" = 0 ] && post "/vehicle/controls?brake=25"; braking=1
-    else
-      [ "$braking" = 1 ] && post "/vehicle/controls?brake=0"; braking=0
-      if [ "$v" -lt $((target - 3)) ]; then post "/vehicle/controls?accelerator=45"
-      elif [ "$v" -gt $((target + 2)) ]; then post "/vehicle/controls?accelerator=0"
-      else post "/vehicle/controls?accelerator=8"; fi
-    fi
-    sleep 0.4
-  done
-  [ "$braking" = 1 ] && post "/vehicle/controls?brake=0"
-}
-
-stop_car() {
-  post "/vehicle/controls?accelerator=0"; post "/vehicle/controls?brake=80"
-  local i=0
-  while [ "$(speed)" != "0" ] && [ $i -lt 40 ]; do sleep 0.25; i=$((i + 1)); done
-  post "/vehicle/controls?brake=0"
-}
-
-# Console back to an empty car in park, no route, the engine off, the safety note agreed, the demo garage.
-start_clean() {
-  for a in passenger rear_left rear_right; do post "/vehicle/seat?kind=occupied&area=$a&value=false"; done
-  post "/vehicle/turn-signal?mode=Off"; post "/vehicle/controls?accelerator=0"; post "/vehicle/controls?brake=0"
-  post "/vehicle/controls?speed=0"; post "/vehicle/gear?gear=Park"
-  drive route --es value cancel; sleep 2 # cancelling a route brings the navigation app forward, so before ours
-  "$ADB" shell am start -n "$PKG/.MainActivity" < /dev/null > /dev/null 2>&1; sleep 3
-  drive agree; drive lapse --ei value 1; drive limit --ei kph 0; drive mute --es value off
-  # adb garage moves reach the garage's view model, which exists once the garage has been on screen.
-  drive screen --es to garage; sleep 2
-  app --es cmd stop; garage reset; sleep 1.5
-}
+# shellcheck source=lib.sh
+source "$HERE/lib.sh"
 
 flow() {
   echo "PT flow -> docs/m3/"
@@ -205,14 +122,6 @@ persist() {
     echo "   settled: ${settled:-none}"
     echo "   balance: ${before#*:} -> ${after#*:}; settlements after a second restart: $again (1 = settled once)"
   } | tee "$OUT/persist.txt"
-}
-
-# Mean and max %CPU of the app over N one-second samples (toybox top: PID USER PR NI VIRT RES SHR S %CPU ...).
-cpu_over() {
-  local secs="$1" p
-  p="$(pid)"
-  "$ADB" shell "top -b -d 1 -n $secs -p $p" < /dev/null | tr -d '\r' \
-    | awk -v pid="$p" '$1 == pid { n++; s += $9; if ($9 > m) m = $9 } END { printf "mean %.1f, max %.1f (%d samples)", s / n, m, n }'
 }
 
 # 30 s of driving with events while top samples the app.

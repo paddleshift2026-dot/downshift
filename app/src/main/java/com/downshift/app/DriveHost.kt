@@ -12,6 +12,7 @@ import com.downshift.app.adapters.demo.DemoCommand
 import com.downshift.app.adapters.pleos.NaviEvents
 import com.downshift.app.adapters.pleos.PleosVehicle
 import com.downshift.app.adapters.store.GarageRepository
+import com.downshift.app.core.demo.DemoPolicy
 import com.downshift.app.core.flow.Screen
 import com.downshift.app.core.flow.ScreenFlow
 import com.downshift.app.core.garage.Catalog
@@ -74,7 +75,11 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
     @Volatile private var consented = garage.consentVersion >= CONSENT_VERSION
     @Volatile private var muted = false
     @Volatile private var pleosAllowed = true
+    @Volatile private var tripOn = false
     private var demoSeq = 0 // main thread
+
+    /** A trip is being recorded (demo mode cannot change until it is settled). */
+    val tripActive: Boolean get() = tripOn
 
     // Drive thread only.
     private val flow = ScreenFlow(consented)
@@ -95,8 +100,8 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
     private val _summary = MutableStateFlow<SummaryView?>(null)
     val summary: StateFlow<SummaryView?> = _summary.asStateFlow()
 
-    /** One trip: when it began, the part its ring fills toward and the balance it fills from. */
-    private class Trip(val startedAtMs: Long, val target: Part?, val balanceAtStart: Int, val meter: TripMeter, var savedAtMs: Long)
+    /** One trip: when it began, the part its ring fills toward, the balance it fills from and the wallet it is driven in. */
+    private class Trip(val startedAtMs: Long, val target: Part?, val balanceAtStart: Int, val meter: TripMeter, var savedAtMs: Long, val demo: Boolean)
 
     init {
         if (consented) listen()
@@ -128,13 +133,24 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
 
     fun demoArrive() = engine.demo(ConsoleCommand.Arrive)
 
-    /** The demo pedal button: on the emulator the console pedal outranks a manual one, so it presses that. */
-    fun demoPedal(down: Boolean) {
+    /** The demo pedal button. */
+    fun demoPedal(down: Boolean) = demoPedalPct(if (down) DEMO_PEDAL_PCT else 0)
+
+    /**
+     * A demo pedal press in percent (the button, the web pedal): on the emulator the console pedal outranks a manual one,
+     * so it presses that, and the demo car, the cluster and the console follow; with no console it is the manual throttle.
+     */
+    fun demoPedalPct(pct: Int) {
         if (engine.consoleConnected) {
-            engine.demo(ConsoleCommand.Accelerator(if (down) DEMO_PEDAL_PCT else 0))
+            engine.demo(ConsoleCommand.Accelerator(pct))
         } else {
-            engine.setManualThrottle(if (down) DEMO_PEDAL_PCT / 100.0 else null)
+            engine.setManualThrottle(if (pct > 0) pct / 100.0 else null)
         }
+    }
+
+    /** The demo's distance lapse (×1 outside demo mode, DemoPolicy). */
+    fun setLapse(x: Int) {
+        events += DriveEvent.Lapse(x)
     }
 
     private fun onDrive(change: () -> Unit) {
@@ -158,8 +174,9 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
             waited += 100
         }
         val g = engine.gear
-        val t = Trip(c.startedAtMs, c.targetId?.let(Catalog::part), garage.state.value.balance, TripMeter(c.totals), System.currentTimeMillis())
+        val t = Trip(c.startedAtMs, c.targetId?.let(Catalog::part), garage.state.value.balance, TripMeter(c.totals), System.currentTimeMillis(), c.demo)
         trip = t
+        tripOn = true
         flow.tripStarted()
         _screen.value = flow.screen
         if (g == GearState.DRIVE || g == GearState.REVERSE || g == GearState.NEUTRAL) {
@@ -186,7 +203,7 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
             val limit = if (demoLimitKph > 0) demoLimitKph else naviLimitKph
             t.meter.step(TripTick(engine.speedMps, pleos.signal, limit), dt * lapse)
             if (now - t.savedAtMs >= CHECKPOINT_MS) {
-                garage.saveTrip(TripCheckpoint(startedAtMs = t.startedAtMs, savedAtMs = now, targetId = t.target?.id, totals = t.meter.totals()))
+                garage.saveTrip(TripCheckpoint(startedAtMs = t.startedAtMs, savedAtMs = now, targetId = t.target?.id, totals = t.meter.totals(), demo = t.demo))
                 t.savedAtMs = now
             }
         }
@@ -208,7 +225,7 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
                 is DriveEvent.Odometer -> if (lapse == 1) trip?.meter?.odometer(e.km)
                 is DriveEvent.Quiet -> quiet = e.on
                 is DriveEvent.Lapse -> {
-                    lapse = e.factor.coerceIn(1, MAX_LAPSE)
+                    lapse = DemoPolicy.lapse(e.factor, garage.demo.value)
                     if (lapse > 1) trip?.meter?.ignoreOdometer()
                 }
             }
@@ -219,9 +236,11 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
         val s = garage.state.value
         val target = Garage.nextTarget(s)
         val now = System.currentTimeMillis()
-        trip = Trip(now, target, s.balance, TripMeter(), now)
+        val demo = garage.demo.value
+        trip = Trip(now, target, s.balance, TripMeter(), now, demo)
+        tripOn = true
         main.post { pleos.readOdometer() }
-        Log.i(tag, "trip start target=${target?.id} balance=${s.balance}")
+        Log.i(tag, "trip start target=${target?.id} balance=${s.balance} demo=$demo")
         flow.tripStarted()
         _screen.value = flow.screen
     }
@@ -231,13 +250,14 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
         trip = null
         val totals: TripTotals = t.meter.finish()
         val points = PointRules.of(totals)
-        val after = garage.finishTrip(points.total)
+        val after = garage.finishTrip(points.total, t.demo)
+        tripOn = false
         _summary.value = TripView.summary(after, totals, points)
         Log.i(
             tag,
             "trip done km=${fmt(totals.distanceKm)} known=${fmt(totals.knownKm)} kept=${fmt(totals.keptKm)} unknown=${fmt(totals.unknownKm)} " +
                 "places=${totals.placesKept}/${totals.placesPassed} turns=${totals.signalled}/${totals.turns} " +
-                "points=${points.distance}+${points.limit}+${points.places}+${points.signals}=${points.total} balance=${after.balance} lapse=$lapse",
+                "points=${points.distance}+${points.limit}+${points.places}+${points.signals}=${points.total} balance=${after.balance} lapse=$lapse demo=${t.demo}",
         )
         flow.tripEnded(PointRules.showsSummary(totals))
         _screen.value = flow.screen
@@ -276,12 +296,23 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
         }
     }
 
-    /** adb: what the emulator's navigation cannot send, and the flow's buttons (see DemoReceiver). */
+    /**
+     * adb: what the emulator's navigation cannot send, and the flow's buttons (see DemoReceiver). Injections that change
+     * a trip's points reach only a trip in demo mode (DemoPolicy).
+     */
     private fun handle(c: DemoCommand) {
         if (c !is DemoCommand.Drive) return
+        if (!DemoPolicy.allowsDrive(c.event, garage.demo.value)) {
+            Log.i(tag, "demo mode is off: drive ${c.event} ignored")
+            return
+        }
         when (c.event) {
             "agree" -> agree()
-            "screen" -> if (c.to == "start") openStart() else back()
+            "screen" -> when (c.to) {
+                "start" -> openStart()
+                "safety" -> reviewSafety()
+                else -> back()
+            }
             "limit" -> events += DriveEvent.Limit(c.kph ?: 0, demo = true)
             "camera" -> events += DriveEvent.Place(PlaceAhead(demoId("camera"), PlaceKind.CAMERA, c.kph ?: 50, (c.m ?: 300).toDouble()))
             "section" -> {
@@ -315,6 +346,5 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
         const val GEAR_WAIT_MS = 3_000L
         const val PLEOS_LINGER_MS = 5_000L
         const val DEMO_PEDAL_PCT = 85
-        const val MAX_LAPSE = 50
     }
 }
