@@ -1,0 +1,20 @@
+M1 sound checks re-run through EngineHost (garage open), 2026-11-03 11:44
+
+## bash tools/sound.sh latency, engine running (as in M1)
+pedal  30%: console write -> sound 63 ms (app write 33 + buffer 30) | host POST -> sound 126 ms
+pedal  80%: console write -> sound 74 ms (app write 44 + buffer 30) | host POST -> sound 126 ms
+pedal   0%: console write -> sound 54 ms (app write 24 + buffer 30) | host POST -> sound 119 ms
+pedal  60%: console write -> sound 55 ms (app write 25 + buffer 30) | host POST -> sound 102 ms
+pedal   0%: console write -> sound 82 ms (app write 52 + buffer 30) | host POST -> sound 131 ms
+pedal 100%: console write -> sound 59 ms (app write 29 + buffer 30) | host POST -> sound 115 ms
+pedal  20%: console write -> sound 71 ms (app write 41 + buffer 30) | host POST -> sound 117 ms
+pedal   0%: console write -> sound 87 ms (app write 57 + buffer 30) | host POST -> sound 152 ms
+console write -> sound: median 71 ms, max 87 ms, n=8 (target <= 120)
+host POST -> sound (clock offset, +-adb RTT/2): median 126 ms, max 152 ms, n=8 (target <= 120)
+
+## bash tools/sound.sh cpu (scenario: start, rev, pull, lift, brake, park, stop)
+app %CPU over 30 samples (1 core = 100): mean 16.1, max 49.0
+
+M1 for comparison: latency median 85 ms, max 98 ms; scenario CPU 19.2 / 18.7%.
+With the engine off the console is polled every 200 ms, so a pedal press waits up to 200 ms more,
+but an engine that is off makes no sound to wait for.
