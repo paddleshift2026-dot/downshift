@@ -9,7 +9,10 @@ import kotlin.math.exp
 
 enum class PowertrainEvent { STARTUP, SHUTDOWN, SHIFT_UP, SHIFT_DOWN, LIMITER, OVERRUN_START }
 
-/** gear is 1.. in drive, 0 in park or neutral, -1 in reverse. load 0..1 is what the engine is asked for. */
+/**
+ * gear is 1.. in drive, 0 in park or neutral, -1 in reverse. load 0..1 is what the engine is asked for.
+ * cranking: the starter turns the engine and nothing fires yet; fuelCut: the limiter has cut the fuel.
+ */
 data class PowertrainState(
     val running: Boolean,
     val rpm: Double,
@@ -19,6 +22,8 @@ data class PowertrainState(
     val overrun: Boolean,
     val atLimiter: Boolean,
     val starting: Boolean,
+    val cranking: Boolean = false,
+    val fuelCut: Boolean = false,
 ) {
     companion object {
         val OFF = PowertrainState(false, 0.0, 0.0, 0, false, false, false, false)
@@ -171,7 +176,10 @@ class VirtualPowertrain(var spec: EngineSpec, var gears: GearSet, var transmissi
         overrun = overrunNow
 
         load = if (overrun || loadCut || cutLeft > 0.0) 0.0 else approach(load, throttle * loadScale, LOAD_TAU, dt)
-        state = PowertrainState(true, rpm, load, gear, shiftLeft > 0.0, overrun, atLimiter, sinceStart < STARTUP_SEC)
+        state = PowertrainState(
+            true, rpm, load, gear, shiftLeft > 0.0, overrun, atLimiter, sinceStart < STARTUP_SEC,
+            cranking = sinceStart < CRANK_SEC, fuelCut = cutLeft > 0.0,
+        )
     }
 
     private fun maybeShift(speed: Double, throttle: Double) {

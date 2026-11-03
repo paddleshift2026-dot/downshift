@@ -183,4 +183,25 @@ class VirtualPowertrainTest {
         assertFalse(p.state.running)
         assertTrue(p.state.rpm < 1.0)
     }
+
+    @Test
+    fun theStarterCranksBeforeAnyCylinderFires() {
+        val p = powertrain()
+        p.start()
+        p.step(parked(), dt)
+        assertTrue(p.state.cranking)
+        p.run(0.3, parked())
+        assertFalse(p.state.cranking)
+    }
+
+    @Test
+    fun theLimiterCutsTheFuelInBursts() {
+        val p = started()
+        var cutSteps = 0
+        var steps = 0
+        p.run(2.0, parked(1.0)) { s, _ -> if (s.fuelCut) cutSteps++; steps++ }
+        assertTrue("cut $cutSteps of $steps steps", cutSteps in 1 until steps / 2)
+        p.run(1.0, parked(0.0))
+        assertFalse(p.state.fuelCut)
+    }
 }
