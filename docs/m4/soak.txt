@@ -1,0 +1,41 @@
+soak, 2026-11-03 19:56: 30 min of drive cycles with V12 running, demo mode, pid 32331, PSS 108457 KB
+cycle 1 at 66 s: pid 32331, driving %CPU mean 15.4, max 21.0 (10 samples)
+cycle 2 at 111 s: pid 32331, driving %CPU mean 18.8, max 27.0 (10 samples)
+cycle 3 at 176 s: pid 32331, driving %CPU mean 15.6, max 19.0 (10 samples)
+cycle 4 at 221 s: pid 32331, driving %CPU mean 14.3, max 21.0 (10 samples)
+cycle 5 at 286 s: pid 32331, driving %CPU mean 15.6, max 19.2 (10 samples), PSS 126389 KB
+cycle 6 at 330 s: pid 32331, driving %CPU mean 16.4, max 25.0 (10 samples)
+cycle 7 at 396 s: pid 32331, driving %CPU mean 17.9, max 25.0 (10 samples)
+cycle 8 at 440 s: pid 32331, driving %CPU mean 15.4, max 29.0 (10 samples)
+cycle 9 at 505 s: pid 32331, driving %CPU mean 14.8, max 21.0 (10 samples)
+cycle 10 at 551 s: pid 32331, driving %CPU mean 16.1, max 30.0 (10 samples), PSS 120565 KB
+cycle 11 at 616 s: pid 32331, driving %CPU mean 17.1, max 22.0 (10 samples)
+cycle 12 at 661 s: pid 32331, driving %CPU mean 20.4, max 37.6 (10 samples)
+cycle 13 at 727 s: pid 32331, driving %CPU mean 19.8, max 22.2 (10 samples)
+cycle 14 at 773 s: pid 32331, driving %CPU mean 19.6, max 23.0 (10 samples)
+cycle 15 at 839 s: pid 32331, driving %CPU mean 15.5, max 19.2 (10 samples), PSS 124893 KB
+cycle 16 at 883 s: pid 32331, driving %CPU mean 14.0, max 23.0 (10 samples)
+cycle 17 at 949 s: pid 32331, driving %CPU mean 14.5, max 17.0 (10 samples)
+cycle 18 at 994 s: pid 32331, driving %CPU mean 18.7, max 25.0 (10 samples)
+cycle 19 at 1061 s: pid 32331, driving %CPU mean 20.6, max 26.0 (10 samples)
+cycle 20 at 1107 s: pid 32331, driving %CPU mean 18.6, max 22.0 (10 samples), PSS 114671 KB
+cycle 21 at 1174 s: pid 32331, driving %CPU mean 21.8, max 29.0 (10 samples)
+cycle 22 at 1220 s: pid 32331, driving %CPU mean 19.1, max 27.0 (10 samples)
+cycle 23 at 1284 s: pid 32331, driving %CPU mean 23.7, max 54.0 (10 samples)
+cycle 24 at 1330 s: pid 32331, driving %CPU mean 19.3, max 27.3 (10 samples)
+cycle 25 at 1395 s: pid 32331, driving %CPU mean 21.6, max 32.0 (10 samples), PSS 126979 KB
+cycle 26 at 1441 s: pid 32331, driving %CPU mean 15.5, max 27.0 (10 samples)
+cycle 27 at 1505 s: pid 32331, driving %CPU mean 16.3, max 19.0 (10 samples)
+cycle 28 at 1550 s: pid 32331, driving %CPU mean 16.2, max 25.0 (10 samples)
+cycle 29 at 1616 s: pid 32331, driving %CPU mean 15.1, max 18.0 (10 samples)
+cycle 30 at 1661 s: pid 32331, driving %CPU mean 14.6, max 18.0 (10 samples), PSS 128555 KB
+cycle 31 at 1726 s: pid 32331, driving %CPU mean 16.3, max 21.0 (10 samples)
+cycle 32 at 1772 s: pid 32331, driving %CPU mean 18.7, max 24.0 (10 samples)
+cycle 33 at 1838 s: pid 32331, driving %CPU mean 21.2, max 27.0 (10 samples)
+end: PSS 128503 KB; trips settled 10 of 33
+crash buffer lines for the app: 0
+FATAL or ANR for the app: 0
+note: "trips settled 10 of 33" counts the trip lines still in logcat; the 2 MiB main buffer had rolled over (the oldest
+DownshiftLab line left was 23 minutes into the run). The demo wallet went from 600 P (3,000 less V12) to 733 P, about
+4 P a trip over 33 trips, as the 10 logged trips show (3-5 P each), so every trip was settled. Driving %CPU over the 33
+cycles: mean 17.5 (cycle means 14.0-23.7, one 1-second spike 54.0) with V12, the heaviest engine.

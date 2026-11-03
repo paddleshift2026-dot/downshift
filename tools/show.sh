@@ -12,6 +12,9 @@
 #                                 #   demo.srt (subtitles), youtube.md (title, description, chapters)
 #   bash tools/show.sh shots      # screenshots for the planning document and the README -> docs/m4/shots/*.jpg
 #   bash tools/show.sh volume N   # the car's media volume index, 0..45 (the emulator starts at 20)
+#   bash tools/show.sh soak [MIN] # MIN minutes (30) of drive cycles with V12 running: restarts, CPU, PSS -> docs/m4/soak.txt
+#   bash tools/show.sh coldstart  # five cold starts (am start -W) -> docs/m4/coldstart.txt
+#   bash tools/show.sh release    # the release APK: contents, install, demo mode, adb, then the debug build back
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OUT="$HERE/../docs/m4"
@@ -338,8 +341,82 @@ shots() {
   echo "  copied to $(cd "$dst" && pwd)"
 }
 
+pss_kb() { "$ADB" shell dumpsys meminfo "$1" < /dev/null | tr -d '\r' | grep -o 'TOTAL PSS: *[0-9]*' | grep -o '[0-9]*$'; }
+
+soak() {
+  local mins="${1:-30}" p0 end cycle=0 c pss
+  echo "a ${mins}-minute drive loop -> docs/m4/soak.txt"
+  start_clean
+  garage tab --es tab engine; sleep 1; garage unlock --es part v12; sleep 1; garage equip --es part v12; sleep 1 # the heaviest engine
+  drive screen --es to start; sleep 2; app --es cmd start; sleep 3
+  p0="$(pid)"; end=$((SECONDS + mins * 60))
+  "$ADB" logcat -c
+  {
+    echo "soak, $(date '+%Y-%m-%d %H:%M'): ${mins} min of drive cycles with V12 running, demo mode, pid $p0, PSS $(pss_kb "$p0") KB"
+    while [ "$SECONDS" -lt "$end" ]; do
+      cycle=$((cycle + 1))
+      post "/vehicle/gear?gear=Drive"; sleep 1; drive limit --ei kph 50
+      hold_speed 40 15
+      drive turn --es dir left --ei m 80; post "/vehicle/turn-signal?mode=BlinkLeft"; hold_speed 40 9; post "/vehicle/turn-signal?mode=Off"
+      if [ $((cycle % 2)) = 1 ]; then drive school --ei m 60; hold_speed 22 20; fi
+      hold_speed 45 12 & c="$(cpu_over 10)"; wait
+      stop_car; post "/vehicle/gear?gear=Park"; sleep 4
+      drive screen --es to start; sleep 1
+      pss=""; if [ $((cycle % 5)) = 0 ]; then pss=", PSS $(pss_kb "$p0") KB"; fi
+      echo "cycle $cycle at $((mins * 60 - end + SECONDS)) s: pid $(pid), driving %CPU $c$pss"
+      if [ "$(pid)" != "$p0" ]; then echo "the app restarted"; break; fi
+    done
+    echo "end: PSS $(pss_kb "$p0") KB; trips settled $(log | grep -c 'trip done') of $cycle"
+    echo "crash buffer lines for the app: $("$ADB" logcat -d -b crash < /dev/null | grep -c "$PKG")"
+    echo "FATAL or ANR for the app: $("$ADB" logcat -d < /dev/null | grep -E 'FATAL EXCEPTION|ANR in' | grep -c "$PKG")"
+  } | tee "$OUT/soak.txt"
+  app --es cmd stop
+}
+
+coldstart() {
+  echo "cold starts -> docs/m4/coldstart.txt"
+  local t all="" front
+  for i in 1 2 3 4 5; do
+    "$ADB" shell am force-stop "$PKG" < /dev/null; sleep 3
+    t="$("$ADB" shell am start -W -n "$PKG/.MainActivity" < /dev/null | tr -d '\r')"
+    front="$(echo "$t" | awk '/^Activity:/ { print $2 }')"
+    all="$all $(echo "$t" | awk '/^TotalTime:/ { print $2 }')"; sleep 5
+  done
+  {
+    echo "cold start (am force-stop, am start -W), $(date '+%Y-%m-%d %H:%M'): TotalTime ms:$all (first frame: $front)"
+    echo "median $(echo "$all" | tr ' ' '\n' | grep . | sort -n | awk '{ v[NR] = $1 } END { print v[int((NR + 1) / 2)] }') ms (PRD: start within 10 s)"
+  } | tee "$OUT/coldstart.txt"
+}
+
+release() {
+  echo "the release APK -> docs/m4/release.txt"
+  local apk="$HERE/../app/build/outputs/apk/release/app-release.apk" texts
+  (cd "$HERE/.." && ./gradlew --offline assembleRelease -q) || { echo "release build failed"; return 1; }
+  {
+    echo "release APK, $(date '+%Y-%m-%d %H:%M'): $(du -h "$apk" | cut -f1)"
+    echo "audio files inside: $(unzip -l "$apk" | grep -c -i -E '\.(wav|dsa)$') (wav/dsa), engines/: $(unzip -l "$apk" | grep -c 'assets/engines/')"
+    echo "pedal page inside: $(unzip -l "$apk" | grep -c 'assets/pedal/index.html')"
+    "$ADB" install -r "$apk" < /dev/null | tr -d '\r' | tail -1
+    "$ADB" shell am start -n "$PKG/.MainActivity" < /dev/null > /dev/null 2>&1; sleep 5
+    "$ADB" logcat -c
+    demo_mode on on; sleep 1; drive screen --es to garage; sleep 2
+    texts="$("$ADB" shell uiautomator dump //sdcard/ui.xml < /dev/null > /dev/null 2>&1; "$ADB" shell cat //sdcard/ui.xml < /dev/null)"
+    echo "dev row (사운드 랩) on screen: $(echo "$texts" | grep -c '사운드 랩')"
+    echo "adb demo command reached the release app: $("$ADB" logcat -d -s DownshiftDemo < /dev/null | grep -c 'command demo')"
+    "$ADB" forward tcp:8790 tcp:8790 > /dev/null
+    echo "web pedal page: $(curl -s -m 3 -o /dev/null -w '%{http_code}' http://127.0.0.1:8790/)"
+    demo_mode off; sleep 1; drive limit --ei kph 50; sleep 1
+    echo "a point injection with demo mode off: $("$ADB" logcat -d -s DownshiftLab < /dev/null | grep -c 'drive limit ignored') ignored"
+    demo_mode on on
+  } | tee "$OUT/release.txt"
+  (cd "$HERE/.." && ./gradlew --offline installDebug -q) && echo "  debug build back on the emulator"
+}
+
 cmd="${1:-}"
 case "$cmd" in
+  soak) soak "${2:-30}" ;;
+  coldstart) coldstart ;;
+  release) release ;;
   wallet) wallet ;;
   latency) latency ;;
   cpu) cpu ;;
@@ -348,5 +425,5 @@ case "$cmd" in
   video) video ;;
   shots) shots ;;
   volume) volume "${2:?index 0..45}"; echo "car volume $(volume_index) / 45" ;;
-  *) echo "usage: show.sh wallet|latency|cpu|background|pt|video|shots|volume N"; exit 1 ;;
+  *) echo "usage: show.sh wallet|latency|cpu|background|pt|video|shots|volume N|soak [MIN]|coldstart|release"; exit 1 ;;
 esac

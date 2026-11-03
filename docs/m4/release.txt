@@ -1,0 +1,8 @@
+release APK, 2026-11-03 20:29: 27M
+audio files inside: 0 (wav/dsa), engines/: 0
+pedal page inside: 1
+Success
+dev row (사운드 랩) on screen: 0
+adb demo command reached the release app: 1
+web pedal page: 200
+a point injection with demo mode off: 1 ignored

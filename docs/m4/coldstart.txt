@@ -1,0 +1,2 @@
+cold start (am force-stop, am start -W), 2026-11-03 19:56: TotalTime ms: 3941 4025 4026 4292 4112 (first frame: com.downshift.app/.MainActivity)
+median 4026 ms (PRD: start within 10 s)
