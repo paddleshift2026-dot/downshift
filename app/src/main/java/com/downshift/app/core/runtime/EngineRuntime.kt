@@ -4,6 +4,7 @@ import com.downshift.app.core.build.Build
 import com.downshift.app.core.build.EngineId
 import com.downshift.app.core.build.ExhaustPart
 import com.downshift.app.core.dsp.EngineMixer
+import com.downshift.app.core.dsp.GainGlide
 import com.downshift.app.core.engine.EngineSpec
 import com.downshift.app.core.engine.Engines
 import com.downshift.app.core.input.SpeedSmoother
@@ -46,6 +47,9 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
         private set
     private var silentSec = 0.0
 
+    @Volatile private var situationGain = 1.0
+    private val situationGlide = GainGlide(1.0)
+
     private val pendingBuild = AtomicReference<Pair<Build, LoadedPack>?>(null)
     private val pendingFuel = AtomicReference<FuelKind?>(null)
     private val pendingStart = AtomicBoolean(false)
@@ -72,6 +76,11 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
 
     fun setFuel(fuel: FuelKind) = pendingFuel.set(fuel)
 
+    /** The situation's share of the volume (guidance, school zone, passenger, mute), 0..1; glides in over blocks. */
+    fun setSituationGain(g: Double) {
+        situationGain = g.coerceIn(0.0, 1.0)
+    }
+
     fun start() {
         pendingStop.set(false)
         pendingStart.set(true)
@@ -90,7 +99,8 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
         val s = powertrain.state
         val ind = induction.step(s.rpm, spec.redlineRpm, s.load, dt)
         val popList = pops.step(s.overrun, director.rpmNorm(s.rpm), SoundDirector.popIntensity(build), dt)
-        val plan = director.plan(s, events, ind, popList, build, fuel)
+        val planned = director.plan(s, events, ind, popList, build, fuel)
+        val plan = planned.copy(master = planned.master * situationGlide.next(situationGain, dt))
         val still = !s.running && s.rpm == 0.0 && events.isEmpty() && !mixer.shotsPlaying
         silentSec = if (still) silentSec + dt else 0.0
         quiet = silentSec >= QUIET_SEC
