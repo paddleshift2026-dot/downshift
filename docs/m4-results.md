@@ -16,7 +16,7 @@
 | `DriveService` | 엔진이 켜졌거나 주행 기록 중일 때 미디어 재생 포그라운드 서비스(조용한 알림), 둘 다 끝나고 5초 뒤 내림 |
 | 권한 요청 | 실행 중에 받을 수 있는(dangerous) 권한만 묻는다. 받을 수 없는 권한까지 물어 시작할 때마다 권한 창이 뜨던 것을 고침 |
 | 도구 | `tools/lib.sh`(공통 함수), `tools/show.sh`(wallet·latency·cpu·background·pt·video·shots·volume·soak·coldstart·release), `pedal_client.mjs`, `webm_audio.py`, `export_shots.py`. `drive.sh`·`garage.sh`는 lib.sh와 시연 모드를 쓴다 |
-| 시연 영상 | `show.sh video`: 에뮬레이터 자체 녹화(1920×1080 VP9 + Vorbis), 155초, 자막 15개(`demo.srt`), YouTube 제목·설명·챕터(`youtube.md`), 장면 프레임(`video_frames.jpg`) |
+| 시연 영상 | `show.sh video`: 에뮬레이터 자체 녹화(1920×1080 VP9 + Vorbis), 자막(`demo.srt`), YouTube 제목·설명·챕터(`youtube.md`), 장면 프레임(`video_frames.jpg`). 11/04에 다시 녹화: 176초, 자막 17개, 콜드 스타트의 팀 로고로 시작하고 기어 N 잠금 화면과 주행 화면이 보인다(11/03 판은 155초, 주행 중 화면이 가려짐) |
 | 캡처 | 9장 JPEG(`docs/m4/shots/`, `현기차_경진대회/화면캡처_다운시프트/`) |
 | 제출물 | 심사용 README, release APK 0.4.0(`apk/Downshift_release.apk`), 기획서 초안과 접수양식 DOCX(`현기차_경진대회/`) |
 
@@ -36,7 +36,7 @@
 | 콜드 스타트 | 중앙값 4.0초 (권한 창 없이 앱 첫 화면까지) | 10초 이내 | `m4/coldstart.txt` |
 | 30분 연속 주행 (V12, 2분 안팎 주기 33번) | 재시작·크래시·FATAL·ANR 0. 주행 CPU 평균 17.5%(주기 평균 14.0~23.7, 1초 최대 54.0), PSS 108MB → 115~128MB에서 안정. 시연 지갑 +133P로 33번 모두 정산(로그 버퍼가 넘쳐 로그에는 10번만 남음) | 무중단, 주행 ≤ 20 | `m4/soak.txt` |
 | release APK | 27MB, 음원 파일(wav·dsa) 0, 웹 페달 페이지 포함. 설치·실행, 개발용 줄 없음, adb 명령 도착(DUMP), 웹 페달 200, 시연 모드 꺼짐에서 포인트 주입 무시 | 설치·실행 | `m4/release.txt` |
-| 시연 영상 소리 | 장면별 RMS: 첫 실행 무음, 개러지 −17.5dB, 시동 −20.9dB, 주행 −20.7dB(스쿨존·안내 음성 구간 −35~−48dB로 줄어듦), 결산 −25.8dB. 미리 듣기에서 풀스케일 샘플 5개 | 들을 만한 크기, 클리핑 없음 | 브라우저 `decodeAudioData` |
+| 시연 영상 소리 (11/04 판) | 장면별 RMS: 첫 실행 무음(−104dB), 개러지 −17.5dB, 시동·레브 −22.2dB, N 공회전 −25.8dB, 주행 −19.8dB(안내 음성 구간 −36.7dB로 줄어듦), 결산 −26.5dB, V12 −25.0dB. 풀스케일 샘플 0(11/03 판은 5). 녹화 중 PC 메모리가 모자라(여유 0.4GB) 영상은 평균 17fps로 고르지 않고(11/03 판 24fps), 1:40~2:00에 60~190ms 소리 끊김이 몇 번 있다 | 들을 만한 크기, 클리핑 없음 | 브라우저 `decodeAudioData`, WebM 블록 시각 |
 
 ## 추가: 주행 규제 따르기 (11/03 밤)
 
@@ -44,7 +44,8 @@ Pleos 개발 가이드는 DO를 선언한 앱이 CarUxRestrictions를 직접 읽
 
 - `core/flow/UxGate`(테스트 3): DO가 필요하면 주행 화면만 보이고 개러지·시동·결산·안전 안내 자리에는 잠금 화면(`ui/DrivingLock`, 글자 두 줄, 조작 없음)이 선다. 개러지 변경과 미리 듣기는 차가 서 있고(P·N·모름, 1km/h 미만) DO가 필요 없을 때만.
 - `CarSignalsAdapter`가 `CarUxRestrictionsManager`를 구독하고 `EngineHost.ux`로 화면에 넘긴다. 켤 때 팀 로고도 DO가 필요하면 건너뛴다(`Intro`, 테스트 1).
-- 확인(`show.sh ux` → `m4/ux.txt`, 9/9 PASS): P에서 V8 미리 듣기 → N 정차에서 DO 0x50, 미리 듣기가 5.6초 중 1.8초에 멈추고 잠금 화면 → P에서 개러지로 돌아옴 → D에서 주행 화면 → 다시 P에서 잠금 화면 없음. release APK로도 9/9.
+- 확인(`show.sh ux` → `m4/ux.txt`, 10/10 PASS): P에서 V8 미리 듣기 → N 정차에서 DO 0x50, 미리 듣기가 5.6초 중 1.5초에 멈추고 잠금 화면 → P에서 개러지로 돌아옴 → D에서 주행 화면, 그 사이 잠금 화면이 한 번도 뜨지 않음 → 다시 P에서 잠금 화면 없음. release APK로도 10/10.
+- 처음 만든 판은 P→D 순간 잠금 화면이 1프레임 넘게 번쩍였다(DO가 주행 시작보다 82ms 먼저 옴, 다시 찍은 시연 영상에서 발견). 잠금 화면은 DO가 0.8초(`UxGate.LOCK_DELAY_MS`) 이어질 때만 띄운다.
 - 회귀: 시연 지갑 16/16(`m4/wallet.txt`), M3 각본 주행 18P·장소 2/2·회전 1/2·거리 = 콘솔 주행계(`m3/trip.txt`), release 확인(`m4/release.txt`) 그대로.
 - 테스트는 263개(시작 로고 작업의 테스트 포함).
 
@@ -52,7 +53,7 @@ Pleos 개발 가이드는 DO를 선언한 앱이 CarUxRestrictions를 직접 읽
 
 - **에뮬레이터 녹화에 소리가 담긴다.** `adb emu screenrecord`가 게스트 출력을 Vorbis 트랙으로 넣는다. 다만 차량 볼륨 그룹이 기본 20/45(−25dB)라 녹화가 앱 믹스보다 25dB 작다. 볼륨 키로 그룹 0을 45로 올려 찍고 20으로 되돌린다(`lib.sh volume`). 볼륨 키는 소리가 없을 때도 그룹 0을 바꾼다.
 - **다른 앱이 앞에 오면 앱이 언다.** Android 14 캐시 앱 동결로 15초 안에 엔진음과 주행 기록이 멈췄다(프로세스는 살아 있음). 포그라운드 서비스로 해결.
-- **D 정차에서도 Pleos가 가린다.** UX 제한 설정은 idling도 DO 필요(0x50)이고, Pleos 홈은 DO가 필요하면 `updateDrivingRestrictionRegion`으로 앱 영역 전체를 가린다. 같은 부팅의 오후(M3 캡처 15:37)에는 D 정차에서 보였고 M3 빌드도 지금은 가려진다. 원인은 찾지 못했다. 그래서 주행 화면 캡처 3장(주행·스쿨존·동승자)은 M3 캡처(개발용 줄을 잘라냄)를 쓰고, 주행 화면 시연 요소는 uiautomator로 확인했다.
+- **Pleos 홈은 맨 위 화면이 DO가 아닐 때만 가린다 (11/04 확인).** 앱 작업의 맨 위가 권한 창(GrantPermissionsActivity)이면 DO가 필요할 때 `updateDrivingRestrictionRegion`으로 앱 영역 전체를 가린다. DO를 선언한 MainActivity가 맨 위면 주행 중에도 가리지 않는다(로그에는 `onFullscreenAvailable ... available: false`만 남음). 11/03 저녁 D 정차에서도 가려진 것은 켤 때마다 권한 창이 앱 위에 떠 있었기 때문이다(받을 수 없는 권한까지 요청하던 때, 이 마일스톤에서 고침). 그때 찍느라 주행 화면 캡처 3장(주행·스쿨존·동승자)은 M3 캡처(개발용 줄을 잘라냄)를 썼다.
 - **페이지 두 개일 때 페달이 남았다.** 한 페이지가 밟은 채 닫혀도 다른 페이지의 ping이 링크를 살려 두었다 → 페이지마다 따로 받고 가장 깊은 값을 쓰는 `PedalMix`.
 - **`lib.sh`의 `node` 함수가 Node.js를 가렸다.** → `ui_node`.
 - **스쿨존 판정은 30km/h를 한 번이라도 넘으면 실패한다.** `hold_speed 28`은 위아래로 흔들려 넘었다 → 시연 각본은 22km/h.
