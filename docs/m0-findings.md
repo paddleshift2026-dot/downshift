@@ -30,12 +30,14 @@ Virtual Console의 입력 모드가 `http-g29`다. 콘솔이 로지텍 G29 휠·
 
 ## 콘솔 HTTP 엔드포인트 (에뮬레이터 안 `0.0.0.0:8088`, PC에서는 `adb forward tcp:8088 tcp:8088`)
 
+모든 응답이 `Connection: close`라 요청마다 새 연결이다 (M1에서 확인).
+
 | 용도 | 요청 |
 |---|---|
 | 전체 상태 | `GET /vehicle/state` (21KB) |
 | 페달·브레이크·속도·조향만 | `GET /vehicle/controls` (832B) |
 | 가속 페달 | `POST /vehicle/controls?accelerator=0..100` |
-| 차속·브레이크 | `POST /vehicle/controls?speed=KPH`, `?brake=0..100` |
+| 차속·브레이크 | `POST /vehicle/controls?speed=KPH`(정수만, 소수는 400 `invalid_speed`), `?brake=0..100`. 쓰기 응답은 차량 상태 전체(약 13KB) |
 | 기어 | `POST /vehicle/gear?gear=Park|Reverse|Neutral|Drive` |
 | 방향지시등 | `POST /vehicle/turn-signal?mode=BlinkLeft|BlinkRight|Off` |
 | 좌석 점유 | `POST /vehicle/seat?kind=occupied&area=driver|passenger|rear_left|rear_right&value=true|false` |
