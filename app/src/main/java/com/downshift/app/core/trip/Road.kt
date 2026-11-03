@@ -13,6 +13,26 @@ enum class Signal {
 /** The navigation's next manoeuvre: the signal it needs, whether it is a highway one (100 m lead) and metres to go. */
 data class TurnAhead(val side: Side, val highway: Boolean, val remainM: Double)
 
+/**
+ * NaviHelper TurnType names to the signal a manoeuvre needs and whether it is a highway one. Manoeuvres whose signal
+ * is ambiguous (keeping to one side, under- and overpasses, roundabouts, merges) are left out, so nobody misses a
+ * point they could not have earned.
+ */
+object TurnKinds {
+    private val CITY_LEFT = setOf("TURN_LEFT", "TURN_SHARP_L", "TURN_UTURN")
+    private val CITY_RIGHT = setOf("TURN_RIGHT", "TURN_SHARP_R")
+    private val HIGHWAY_LEFT = setOf("TURN_ENTER_IC_L", "TURN_EXIT_IC_L")
+    private val HIGHWAY_RIGHT = setOf("TURN_ENTER_IC_R", "TURN_EXIT_IC_R", "TURN_ENTER_SERVICEAREA", "TURN_RESTAREA")
+
+    fun of(typeName: String): Pair<Side, Boolean>? = when (typeName) {
+        in CITY_LEFT -> Side.LEFT to false
+        in CITY_RIGHT -> Side.RIGHT to false
+        in HIGHWAY_LEFT -> Side.LEFT to true
+        in HIGHWAY_RIGHT -> Side.RIGHT to true
+        else -> null
+    }
+}
+
 enum class PlaceKind { SCHOOL_ZONE, CAMERA, SECTION_START, SECTION_END }
 
 /** A school zone, speed camera or section-camera end the navigation announced; limitKph is 0 when it gave none. */
