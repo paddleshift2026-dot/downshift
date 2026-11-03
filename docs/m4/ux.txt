@@ -1,10 +1,11 @@
-driving restrictions (CarUxRestrictions), 2026-11-03 23:48
+driving restrictions (CarUxRestrictions), 2026-11-04 00:41
 PASS 1 a V8 preview plays in park (yes)
 PASS 2 neutral at a standstill asks for DO (no video, no setup) (yes)
-PASS 2 ... the preview stops before its end (preview over at 1.8 of 5.6) (yes)
+PASS 2 ... the preview stops before its end (preview over at 1.5 of 5.6) (yes)
 PASS 2 ... the lock view stands in for the garage (yes)
 PASS 3 park asks for no DO (yes)
 PASS 3 ... the garage is back (no)
 PASS 4 drive opens the drive screen (yes)
 PASS 4 ... not the lock view (no)
+PASS 4 ... and the lock view never flashed on the way (no)
 PASS 5 back in park, no lock view (no)

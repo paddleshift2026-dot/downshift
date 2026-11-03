@@ -8,7 +8,7 @@
 #   bash tools/show.sh background # the engine and the trip behind the navigation app -> docs/m4/background.txt
 #   bash tools/show.sh pt         # PT rehearsal scene by scene (Enter); PT_AUTO=1 straight through, PT_PEDAL=web for
 #                                 #   the revs on the web pedal, PT_VOLUME=0..45 the car volume (default 35)
-#   bash tools/show.sh video      # the PT flow recorded with sound (car volume 45, then 20) -> docs/m4/demo.webm,
+#   bash tools/show.sh video      # a cold start and the PT flow recorded with sound (car volume 45, then 20) -> demo.webm,
 #                                 #   demo.srt (subtitles), youtube.md (title, description, chapters)
 #   bash tools/show.sh shots      # screenshots for the planning document and the README -> docs/m4/shots/*.jpg
 #   bash tools/show.sh volume N   # the car's media volume index, 0..45 (the emulator starts at 20)
@@ -191,7 +191,7 @@ scenes() {
   caption "첫 실행 안내 · 엔진음은 실내 스피커로만, 내비 안내와 경고가 먼저" 11 "첫 실행 안전 안내"
   sleep 6; tap_text "위 내용을 확인했고"; sleep 1.5; tap_text "동의하고 개러지로"; sleep 2.5
   step "2 개러지와 미리 듣기"
-  caption "개러지 · 잠긴 부품도 정차 중엔 미리 들어 봐요 · V8" 11 "개러지와 미리 듣기"
+  caption "개러지 · 잠긴 부품도 P에선 미리 들어 봐요 · V8" 11 "개러지와 미리 듣기"
   garage tab --es tab engine; sleep 1; garage preview --es part v8; sleep 9
   caption "터보 3단 · 휘슬과 블로오프" 10
   garage tab --es tab intake; sleep 1; garage preview --es part t3; sleep 9
@@ -203,7 +203,9 @@ scenes() {
   caption "정차 중 레브 · 페달을 떼면 회전이 떨어지며 팝콘" 10
   rev 70 1.2; sleep 2; rev 90 1.0; sleep 3
   step "4 주행"
-  caption "기어 D · 주행 중엔 Pleos가 앱 화면을 가려요. Downshift는 화면 대신 소리로" 9 "주행: 화면 대신 소리"
+  caption "기어 N · 주행 규제(DO)가 걸리면 정차 전용 화면은 잠겨요" 4 "주행 규제와 주행 화면"
+  post "/vehicle/gear?gear=Neutral"; sleep 4
+  caption "기어 D · 주행 화면은 이번 주행 포인트와 엔진음 상태만, rpm·속도는 없어요" 9
   post "/vehicle/gear?gear=Drive"; sleep 3; drive limit --ei kph 50
   caption "가속하면 rpm이 차오르고, 페달을 떼면 팝콘, 감속하면 다운시프트 블립" 14
   hold_speed 50 8; post "/vehicle/controls?accelerator=0"; sleep 3; post "/vehicle/controls?brake=30"; sleep 2; post "/vehicle/controls?brake=0"
@@ -254,11 +256,11 @@ youtube() {
 
 Downshift는 법규를 지키며 달려 모은 포인트로 가상 엔진을 조립·튜닝하고, 내 페달에 반응하는 그 엔진 소리를 차 실내 스피커로만 듣는 Pleos Connect 앱입니다.
 Pleos Connect Emulator v2.1.0에서 실제로 돌린 화면과 소리입니다. 기어·페달·좌석은 Virtual Console로 바꾸고, 에뮬레이터 내비가 보내지 않는 제한속도·스쿨존·단속 카메라는 시연 모드에서 넣었습니다.
-주행 중에는 Pleos 규정대로 앱 화면이 가려지고, Downshift는 화면 대신 소리와 기록으로 동작합니다. 결산의 포인트는 시연 지갑의 포인트이고, 카메라 구간부터는 시연 배속 ×20으로 센 거리입니다.
+주행 중에는 주의 분산 최적화(DO) 규칙에 맞춘 주행 화면만 보이고, 주행 규제(CarUxRestrictions)가 걸리면 개러지 같은 정차 전용 화면은 잠깁니다. 결산의 포인트는 시연 지갑의 포인트이고, 카메라 구간부터는 시연 배속 ×20으로 센 거리입니다.
 
 ## 챕터
 
-${CHAPTERS}
+$(printf '%s' "$CHAPTERS" | sed '1s/^[0-9]*:[0-9]*/0:00/')
 EOF
 }
 
@@ -286,10 +288,14 @@ video() {
   echo "the PT flow with sound -> docs/m4/demo.webm, demo.srt, youtube.md"
   setup 45
   demo_mode on off; drive lapse --ei value 1
-  drive screen --es to safety; sleep 2
   SRT="$OUT/demo.srt"; : > "$SRT"; CUE=0; CHAPTERS=""
+  # A cold start on camera for the team wordmark; the flow goes to the safety note while the wordmark is up.
+  "$ADB" shell am force-stop "$PKG" < /dev/null; sleep 2
   "$ADB" logcat -c
   rec_start demo 178
+  caption "Pleos Connect 에뮬레이터에서 Downshift 실행" 6
+  "$ADB" shell am start -W -n "$PKG/.MainActivity" < /dev/null > /dev/null 2>&1
+  drive screen --es to safety; sleep 2.5
   scenes
   rec_stop; sleep 2
   volume 20
@@ -415,7 +421,8 @@ release() {
 }
 
 # The driving restrictions (CarUxRestrictions): Pleos asks for DO in neutral at a standstill, so a garage preview stops
-# early and the lock view stands in for the garage; park opens it again; drive shows the drive screen as before.
+# early and the lock view stands in for the garage; park opens it again; drive shows the drive screen as before,
+# without the lock view flashing in between.
 ux() {
   echo "driving restrictions -> docs/m4/ux.txt"
   start_clean
@@ -434,9 +441,11 @@ ux() {
     post "/vehicle/gear?gear=Park"; sleep 2.5
     check "3 park asks for no DO" "$(seen 'ux DO=false')" yes
     check "3 ... the garage is back" "$(onscreen "$lock")" no
+    "$ADB" logcat -c
     post "/vehicle/gear?gear=Drive"; sleep 2.5
     check "4 drive opens the drive screen" "$(onscreen '음소거')" yes
     check "4 ... not the lock view" "$(onscreen "$lock")" no
+    check "4 ... and the lock view never flashed on the way" "$(seen 'lock view shown')" no
     stop_car; post "/vehicle/gear?gear=Park"; sleep 2.5
     check "5 back in park, no lock view" "$(onscreen "$lock")" no
   } | tee "$OUT/ux.txt"
