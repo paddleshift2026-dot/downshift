@@ -1,231 +1,231 @@
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3794752K used,   221340K free,    81604K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1233888K cached
-400%cpu  23%user   4%nice 196%sys 177%idle   0%iow   0%irq   0%sirq   0%host
+  Mem:  4016092K total,  3688104K used,   327988K free,    91016K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062592K cached
+400%cpu  19%user   4%nice 196%sys 181%idle   0%iow   0%irq   0%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 180M 105M S 19.2   4.5   0:14.68 com.downshift.app
+16927 u10_a177     10 -10  13G 178M 105M S 14.8   4.5   0:14.95 com.downshift.app
 
 
 
 Tasks: 1 total,   1 running,   0 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3795840K used,   220252K free,    81636K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1233948K cached
-400%cpu  35%user   2%nice 189%sys 173%idle   0%iow   0%irq   1%sirq   0%host
+  Mem:  4016092K total,  3678780K used,   337312K free,    91044K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062640K cached
+400%cpu  31%user   1%nice 206%sys 160%idle   0%iow   0%irq   2%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 166M 105M R 31.0   4.2   0:14.73 com.downshift.app
+16927 u10_a177     10 -10  13G 179M 105M R 34.0   4.5   0:14.99 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3796848K used,   219244K free,    81668K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1233948K cached
-400%cpu  21%user   1%nice 201%sys 175%idle   0%iow   0%irq   2%sirq   0%host
+  Mem:  4016092K total,  3678780K used,   337312K free,    91072K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062640K cached
+400%cpu  27%user   1%nice 198%sys 171%idle   0%iow   0%irq   3%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 162M 105M S 17.0   4.1   0:15.04 com.downshift.app
+16927 u10_a177     10 -10  13G 161M 105M S 20.0   4.1   0:15.33 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3797352K used,   218740K free,    81688K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1233948K cached
-400%cpu  24%user   0%nice 185%sys 188%idle   1%iow   0%irq   2%sirq   0%host
+  Mem:  4016092K total,  3660384K used,   355708K free,    91088K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062644K cached
+400%cpu  18%user   1%nice 183%sys 196%idle   0%iow   0%irq   2%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 161M 105M S 18.0   4.1   0:15.21 com.downshift.app
+16927 u10_a177     10 -10  13G 162M 105M S 13.0   4.1   0:15.53 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3798360K used,   217732K free,    81700K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1233948K cached
-400%cpu  28%user   0%nice 177%sys 191%idle   0%iow   0%irq   4%sirq   0%host
+  Mem:  4016092K total,  3661140K used,   354952K free,    91104K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062644K cached
+400%cpu  26%user   0%nice 189%sys 183%idle   0%iow   0%irq   2%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 162M 105M S 16.0   4.1   0:15.39 com.downshift.app
+16927 u10_a177     10 -10  13G 163M 105M S 18.0   4.1   0:15.66 com.downshift.app
+
+
+
+Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
+  Mem:  4016092K total,  3661140K used,   354952K free,    91128K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062648K cached
+400%cpu  23%user   2%nice 192%sys 180%idle   0%iow   0%irq   3%sirq   0%host
+  PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
+16927 u10_a177     10 -10  13G 164M 105M S 19.0   4.1   0:15.84 com.downshift.app
+
+
+
+Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
+  Mem:  4016092K total,  3661140K used,   354952K free,    91140K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062656K cached
+400%cpu  24%user   0%nice 189%sys 186%idle   0%iow   0%irq   1%sirq   0%host
+  PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
+16927 u10_a177     10 -10  13G 165M 105M S 18.0   4.2   0:16.03 com.downshift.app
+
+
+
+Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
+  Mem:  4016092K total,  3661140K used,   354952K free,    91152K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062756K cached
+400%cpu  26%user   0%nice 194%sys 178%idle   0%iow   0%irq   2%sirq   0%host
+  PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
+16927 u10_a177     10 -10  13G 166M 105M S 16.0   4.2   0:16.21 com.downshift.app
+
+
+
+Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
+  Mem:  4016092K total,  3661140K used,   354952K free,    91152K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062764K cached
+400%cpu  24%user   1%nice 205%sys 166%idle   0%iow   0%irq   4%sirq   0%host
+  PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
+16927 u10_a177     10 -10  13G 167M 105M S 20.0   4.2   0:16.37 com.downshift.app
+
+
+
+Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
+  Mem:  4016092K total,  3661140K used,   354952K free,    91156K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062772K cached
+400%cpu  22%user   0%nice 192%sys 183%idle   1%iow   0%irq   2%sirq   0%host
+  PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
+16927 u10_a177     10 -10  13G 168M 105M S 18.0   4.2   0:16.57 com.downshift.app
 
 
 
 Tasks: 1 total,   1 running,   0 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3799872K used,   216220K free,    81700K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1233952K cached
-400%cpu  28%user   0%nice 194%sys 176%idle   0%iow   0%irq   2%sirq   0%host
+  Mem:  4016092K total,  3662400K used,   353692K free,    91160K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062776K cached
+400%cpu  30%user   0%nice 181%sys 188%idle   0%iow   0%irq   1%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 163M 105M R 21.0   4.1   0:15.55 com.downshift.app
+16927 u10_a177     10 -10  13G 169M 105M R 19.0   4.3   0:16.75 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3801636K used,   214456K free,    81708K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1233960K cached
-400%cpu  18%user   0%nice 179%sys 200%idle   0%iow   0%irq   3%sirq   0%host
+  Mem:  4016092K total,  3668952K used,   347140K free,    91172K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062804K cached
+400%cpu  23%user   1%nice 203%sys 171%idle   0%iow   0%irq   2%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 164M 105M S 19.0   4.1   0:15.76 com.downshift.app
+16927 u10_a177     10 -10  13G 170M 105M S 17.0   4.3   0:16.94 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3803396K used,   212696K free,    81712K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1233968K cached
-400%cpu  29%user   0%nice 184%sys 186%idle   0%iow   0%irq   1%sirq   0%host
+  Mem:  4016092K total,  3681048K used,   335044K free,    91204K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062808K cached
+400%cpu  30%user   0%nice 195%sys 173%idle   0%iow   0%irq   2%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 165M 105M S 17.0   4.2   0:15.95 com.downshift.app
+16927 u10_a177     10 -10  13G 171M 105M S 19.0   4.3   0:17.11 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3799248K used,   216844K free,    81716K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1233972K cached
-400%cpu  31%user   3%nice 203%sys 161%idle   1%iow   0%irq   1%sirq   0%host
+  Mem:  4016092K total,  3683316K used,   332776K free,    91232K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062812K cached
+400%cpu  31%user   2%nice 197%sys 168%idle   0%iow   0%irq   2%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 167M 105M S 18.0   4.2   0:16.12 com.downshift.app
+16927 u10_a177     10 -10  13G 173M 105M S 18.0   4.3   0:17.30 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3775144K used,   240948K free,    81716K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1233972K cached
-400%cpu  28%user   0%nice 189%sys 182%idle   0%iow   0%irq   1%sirq   0%host
+  Mem:  4016092K total,  3677520K used,   338572K free,    91264K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062812K cached
+400%cpu  31%user   2%nice 186%sys 179%idle   0%iow   0%irq   2%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 168M 105M S 20.0   4.2   0:16.30 com.downshift.app
+16927 u10_a177     10 -10  13G 173M 105M S 18.0   4.4   0:17.48 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3783208K used,   232884K free,    81716K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1233988K cached
-400%cpu  25%user   1%nice 204%sys 165%idle   0%iow   0%irq   5%sirq   0%host
+  Mem:  4016092K total,  3675756K used,   340336K free,    91296K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062816K cached
+400%cpu  26%user   2%nice 201%sys 169%idle   1%iow   0%irq   1%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 169M 105M S 19.0   4.3   0:16.50 com.downshift.app
+16927 u10_a177     10 -10  13G 174M 105M S 19.0   4.4   0:17.66 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3794296K used,   221796K free,    81716K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234008K cached
-400%cpu  27%user   0%nice 185%sys 187%idle   0%iow   0%irq   1%sirq   0%host
+  Mem:  4016092K total,  3686844K used,   329248K free,    91324K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062820K cached
+400%cpu  24%user   0%nice 207%sys 167%idle   0%iow   0%irq   2%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 170M 105M S 16.0   4.3   0:16.69 com.downshift.app
+16927 u10_a177     10 -10  13G 175M 105M S 20.0   4.4   0:17.85 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3806612K used,   209480K free,    81724K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234012K cached
-400%cpu  27%user   1%nice 203%sys 166%idle   0%iow   0%irq   3%sirq   0%host
+  Mem:  4016092K total,  3682560K used,   333532K free,    91352K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062820K cached
+400%cpu  29%user   2%nice 208%sys 157%idle   0%iow   0%irq   4%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 172M 105M S 18.0   4.3   0:16.85 com.downshift.app
+16927 u10_a177     10 -10  13G 176M 105M S 21.0   4.4   0:18.05 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3813668K used,   202424K free,    81728K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234024K cached
-400%cpu  23%user   1%nice 190%sys 184%idle   0%iow   0%irq   2%sirq   0%host
+  Mem:  4016092K total,  3690876K used,   325216K free,    91364K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062832K cached
+400%cpu  28%user   0%nice 189%sys 179%idle   1%iow   0%irq   3%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 173M 105M S 17.0   4.4   0:17.03 com.downshift.app
+16927 u10_a177     10 -10  13G 177M 105M S 19.0   4.5   0:18.26 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3821228K used,   194864K free,    81728K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234032K cached
-400%cpu  31%user   2%nice 211%sys 151%idle   0%iow   0%irq   5%sirq   0%host
+  Mem:  4016092K total,  3699416K used,   316676K free,    91372K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062832K cached
+400%cpu  30%user   0%nice 205%sys 163%idle   0%iow   0%irq   2%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 174M 105M S 19.0   4.4   0:17.20 com.downshift.app
+16927 u10_a177     10 -10  13G 178M 105M S 20.0   4.5   0:18.45 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3821984K used,   194108K free,    81768K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234036K cached
-400%cpu  42%user   4%nice 229%sys 121%idle   0%iow   0%irq   4%sirq   0%host
+  Mem:  4016092K total,  3707732K used,   308360K free,    91376K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062840K cached
+400%cpu  31%user   1%nice 200%sys 165%idle   0%iow   0%irq   3%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 173M 105M S 19.0   4.4   0:17.39 com.downshift.app
+16927 u10_a177     10 -10  13G 180M 105M S 19.0   4.5   0:18.65 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3804596K used,   211496K free,    81788K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234040K cached
-400%cpu  29%user   0%nice 205%sys 164%idle   0%iow   0%irq   2%sirq   0%host
+  Mem:  4016092K total,  3703700K used,   312392K free,    91376K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062860K cached
+400%cpu  29%user   1%nice 206%sys 160%idle   0%iow   0%irq   4%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 175M 105M S 19.0   4.4   0:17.58 com.downshift.app
+16927 u10_a177     10 -10  13G 181M 105M S 20.0   4.6   0:18.84 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3796532K used,   219560K free,    81796K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234044K cached
-400%cpu  21%user   4%nice 211%sys 163%idle   0%iow   0%irq   1%sirq   0%host
+  Mem:  4016092K total,  3704456K used,   311636K free,    91376K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062860K cached
+400%cpu  28%user   1%nice 191%sys 178%idle   1%iow   0%irq   1%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 176M 105M S 20.0   4.4   0:17.77 com.downshift.app
+16927 u10_a177     10 -10  13G 182M 105M S 16.0   4.6   0:19.04 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3791608K used,   224484K free,    81800K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234048K cached
-400%cpu  27%user   0%nice 199%sys 172%idle   1%iow   0%irq   1%sirq   0%host
+  Mem:  4016092K total,  3674956K used,   341136K free,    91376K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062868K cached
+400%cpu  25%user   2%nice 202%sys 169%idle   0%iow   0%irq   2%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 177M 105M S 15.0   4.5   0:17.97 com.downshift.app
+16927 u10_a177     10 -10  13G 183M 105M S 14.0   4.6   0:19.20 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3794988K used,   221104K free,    81804K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234052K cached
-400%cpu  31%user   0%nice 187%sys 181%idle   0%iow   0%irq   1%sirq   0%host
+  Mem:  4016092K total,  3674956K used,   341136K free,    91384K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062896K cached
+400%cpu  27%user   1%nice 193%sys 177%idle   0%iow   0%irq   2%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 178M 105M S 19.0   4.5   0:18.12 com.downshift.app
+16927 u10_a177     10 -10  13G 184M 105M S 14.0   4.6   0:19.34 com.downshift.app
 
 
 
 Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3791712K used,   224380K free,    81804K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234072K cached
-400%cpu  27%user   0%nice 207%sys 164%idle   0%iow   0%irq   2%sirq   0%host
+  Mem:  4016092K total,  3674956K used,   341136K free,    91396K buffers
+ Swap:  3012064K total,  1017344K used,  1994720K free,  1062896K cached
+400%cpu  33%user   2%nice 187%sys 176%idle   0%iow   0%irq   2%sirq   0%host
   PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 179M 105M S 18.0   4.5   0:18.31 com.downshift.app
-
-
-
-Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3797496K used,   218596K free,    81804K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234080K cached
-400%cpu  26%user   2%nice 205%sys 165%idle   0%iow   0%irq   2%sirq   0%host
-  PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 181M 105M S 20.0   4.6   0:18.49 com.downshift.app
-
-
-
-Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3800520K used,   215572K free,    81808K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234084K cached
-400%cpu  24%user   0%nice 206%sys 168%idle   0%iow   0%irq   2%sirq   0%host
-  PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 182M 105M S 16.0   4.6   0:18.69 com.downshift.app
-
-
-
-Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3804300K used,   211792K free,    81820K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234084K cached
-400%cpu  16%user   0%nice 190%sys 193%idle   1%iow   0%irq   0%sirq   0%host
-  PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 183M 105M S 14.0   4.6   0:18.85 com.downshift.app
-
-
-
-Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3808836K used,   207256K free,    81852K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234084K cached
-400%cpu  22%user   1%nice 192%sys 185%idle   0%iow   0%irq   0%sirq   0%host
-  PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 184M 105M S 13.0   4.6   0:18.99 com.downshift.app
-
-
-
-Tasks: 1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
-  Mem:  4016092K total,  3810096K used,   205996K free,    81876K buffers
- Swap:  3012064K total,  1017344K used,  1994720K free,  1234124K cached
-400%cpu  24%user   3%nice 201%sys 171%idle   0%iow   0%irq   1%sirq   0%host
-  PID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ ARGS
-26689 u10_a177     10 -10  13G 185M 105M S 21.0   4.7   0:19.12 com.downshift.app
+16927 u10_a177     10 -10  13G 185M 105M S 22.0   4.7   0:19.48 com.downshift.app
