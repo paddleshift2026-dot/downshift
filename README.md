@@ -28,7 +28,7 @@ bash tools/sound.sh cpu 26                       # 시나리오 중 앱 CPU
 
 ## 엔진 음원
 
-구매한 음원(GameDev Market Pro Licence)은 라이선스상 저장소에 넣지 않는다. 앱은 음원이 없으면 합성 엔진 팩으로 동작한다. 음원이 있으면:
+기본 소리는 실시간 합성이다. 점화 순서대로 실린더마다 배기 펄스를 쏘고 배기 경로·꼬리관 반사·몸체 공명을 입혀서, 음원 없이 모든 엔진이 동작한다. 구매한 녹음 음원(GameDev Market Pro Licence)은 선택이고, 라이선스상 저장소에 넣지 않는다. 음원이 있으면:
 
 ```bash
 python -I tools/pack_builder.py audio_test/pack/<엔진 폴더> app/src/main/assets/engines/i4 --engine I4 --estimate-rpm 4
@@ -39,7 +39,7 @@ python -I tools/pack_builder.py audio_test/pack/<엔진 폴더> app/src/main/ass
 ## 테스트
 
 ```bash
-./gradlew testDebugUnitTest                       # 코어 133개 + 오프라인 렌더 app/build/renders/*.wav
+./gradlew testDebugUnitTest                       # 코어 159개 + 오프라인 렌더 app/build/renders/*.wav
 python -I tools/pack_builder.py --selftest
 python -I tools/audio_inventory.py --selftest
 ```
@@ -50,7 +50,8 @@ python -I tools/audio_inventory.py --selftest
   - `powertrain/` 가상 파워트레인, 변속기, 부하 추정, 시연 차량 모델
   - `sound/` rpm 구간 크로스페이드, 흡기(터보·슈퍼차저), 팝콘, 디렉터
   - `dsp/` 바이쿼드, 배기 체인, 믹서, WAV 쓰기
-  - `pack/` 매니페스트 규칙, `.dsa` 코덱, 합성 팩
+  - `synth/` 실시간 배기 펄스 합성(`EngineVoice`), 점화 순서와 뱅크(`FiringPlans`)
+  - `pack/` 매니페스트 규칙, `.dsa` 코덱, 실시간 합성 팩, 미리 구운 루프 합성 팩(비교용)
   - `runtime/` 블록마다 파워트레인 → 디렉터 → 믹서
   - `input/` 입력 우선순위(콘솔 > 수동 > 추정), 차속 스무딩
 - `adapters/` 안드로이드 쪽: AudioTrack 출력, 에셋 팩 로더, AAOS 차량 신호, 콘솔 주행, adb 명령(DemoBus)
