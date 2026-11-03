@@ -23,3 +23,8 @@ docs/m1/renders/*.wav
 # the garage flow recording is large; regenerate it with tools/garage.sh flow
 docs/m2/*.wav
 docs/m3/*.wav
+
+# M4: screen recordings and recordings of the app, and the screenshots PNG originals (the JPEGs are kept)
+docs/m4/*.webm
+docs/m4/*.wav
+docs/m4/shots/png/

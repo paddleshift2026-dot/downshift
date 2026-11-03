@@ -110,6 +110,47 @@ start_clean() {
   app --es cmd stop; garage reset; sleep 1.5
 }
 
+# The car's media volume group (CarVolumeGroup 0) to index $1 of 45 with the volume keys; the emulator starts at 20
+# (-25 dB), which leaves recordings 25 dB under the app's mix. Waits for the volume bar to go.
+volume_index() {
+  "$ADB" shell dumpsys car_service --services CarAudioService < /dev/null 2>/dev/null | tr -d '\r' \
+    | awk '/CarVolumeGroup\(0\)/ { g = 1 } g && /Gain indexes/ { print $NF; exit }'
+}
+volume() {
+  local want="$1" now n key keys=""
+  now="$(volume_index)"; now="${now:-20}"
+  n=$((want - now)); key=24 # KEYCODE_VOLUME_UP
+  if [ "$n" -lt 0 ]; then n=$((-n)); key=25; fi
+  [ "$n" -eq 0 ] && return
+  for _ in $(seq "$n"); do keys="$keys $key"; done
+  "$ADB" shell input keyevent $keys < /dev/null
+  sleep 3.5
+  now="$(volume_index)"
+  [ "$now" = "$want" ] || echo "  (car volume is $now, wanted $want)"
+}
+
+# Emulator screen recording with the guest's sound (VP9 + Vorbis WebM, at most 180 s), to $OUT/NAME.webm.
+REC_T0=0
+rec_start() {
+  REC_T0="$(date +%s%3N)"
+  MSYS_NO_PATHCONV=1 "$ADB" emu screenrecord start --size 1920x1080 --bit-rate 8000000 --time-limit "$2" "$(cygpath -w "$OUT/$1.webm")" > /dev/null
+}
+rec_stop() { "$ADB" emu screenrecord stop > /dev/null 2>&1; }
+
+# A subtitle cue for the next SECS seconds since rec_start (also printed), appended to $SRT; a third argument also
+# starts a YouTube chapter there (collected in $CHAPTERS).
+SRT=/dev/null; CUE=0; CHAPTERS=""
+srt_time() { printf '%02d:%02d:%02d,%03d' $(($1 / 3600000)) $(($1 / 60000 % 60)) $(($1 / 1000 % 60)) $(($1 % 1000)); }
+yt_time() { printf '%d:%02d' $(($1 / 60000)) $(($1 / 1000 % 60)); }
+caption() {
+  local start end
+  start=$(($(date +%s%3N) - REC_T0)); end=$((start + $2 * 1000))
+  CUE=$((CUE + 1))
+  printf '%d\n%s --> %s\n%s\n\n' "$CUE" "$(srt_time "$start")" "$(srt_time "$end")" "$1" >> "$SRT"
+  if [ -n "${3:-}" ]; then CHAPTERS="${CHAPTERS}$(yt_time "$start") $3"$'\n'; fi
+  echo "  [$(yt_time "$start")] $1"
+}
+
 # Mean and max %CPU of the app over N one-second samples (toybox top: PID USER PR NI VIRT RES SHR S %CPU ...).
 cpu_over() {
   local secs="$1" p

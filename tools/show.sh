@@ -6,6 +6,12 @@
 #   bash tools/show.sh latency    # web pedal message -> sound, the way sound.sh latency does it -> docs/m4/latency.txt
 #   bash tools/show.sh cpu        # %CPU (one core = 100) with demo mode and the web pedal -> docs/m4/cpu.txt
 #   bash tools/show.sh background # the engine and the trip behind the navigation app -> docs/m4/background.txt
+#   bash tools/show.sh pt         # PT rehearsal scene by scene (Enter); PT_AUTO=1 straight through, PT_PEDAL=web for
+#                                 #   the revs on the web pedal, PT_VOLUME=0..45 the car volume (default 35)
+#   bash tools/show.sh video      # the PT flow recorded with sound (car volume 45, then 20) -> docs/m4/demo.webm,
+#                                 #   demo.srt (subtitles), youtube.md (title, description, chapters)
+#   bash tools/show.sh shots      # screenshots for the planning document and the README -> docs/m4/shots/*.jpg
+#   bash tools/show.sh volume N   # the car's media volume index, 0..45 (the emulator starts at 20)
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OUT="$HERE/../docs/m4"
@@ -157,11 +163,190 @@ background() {
   app --es cmd stop
 }
 
+# Forwards, the app's permissions, a clean demo start and the car volume ($1).
+setup() {
+  "$ADB" forward tcp:8088 tcp:8088 > /dev/null; "$ADB" forward tcp:8790 tcp:8790 > /dev/null
+  bash "$HERE/probe.sh" grant > /dev/null 2>&1; sleep 3
+  start_clean
+  volume "$1"
+}
+
+step() { echo "== $1"; if [ "${PT_WAIT:-0}" = 1 ]; then read -r -p "   Enter: 다음 장면 " _ < /dev/tty; fi; }
+
+# The console pedal at PCT % for SECS seconds, then off; with PT_PEDAL=web a judge presses the web pedal instead.
+rev() {
+  if [ "${PT_PEDAL:-}" = web ]; then echo "   웹 페달을 밟아 보세요 (${2}초)"; sleep "$2"; return; fi
+  post "/vehicle/controls?accelerator=$1"; sleep "$2"; post "/vehicle/controls?accelerator=0"
+}
+
+# The PT flow, about 2 min 50 s: the first-run note, garage previews, the start and revs, a drive (a signalled turn,
+# a school zone, a guidance prompt, a camera), the summary with V12 unlocked, a V12 start. Captions mark each part.
+scenes() {
+  step "1 첫 실행 안내"
+  caption "첫 실행 안내 · 엔진음은 실내 스피커로만, 내비 안내와 경고가 먼저" 11 "첫 실행 안전 안내"
+  sleep 6; tap_text "위 내용을 확인했고"; sleep 1.5; tap_text "동의하고 개러지로"; sleep 2.5
+  step "2 개러지와 미리 듣기"
+  caption "개러지 · 잠긴 부품도 정차 중엔 미리 들어 봐요 · V8" 11 "개러지와 미리 듣기"
+  garage tab --es tab engine; sleep 1; garage preview --es part v8; sleep 9
+  caption "터보 3단 · 휘슬과 블로오프" 10
+  garage tab --es tab intake; sleep 1; garage preview --es part t3; sleep 9
+  caption "트랙 배기 · 직관 사운드를 실내에서만" 10
+  garage tab --es tab exhaust; sleep 1; garage preview --es part track; sleep 9
+  step "3 시동과 레브"
+  caption "시동 · START를 길게 누르면 바늘이 한 번 쓸고 공회전으로" 9 "시동과 정차 중 레브"
+  drive screen --es to start; sleep 2; hold_text "시동 걸기" 1300; sleep 4
+  caption "정차 중 레브 · 페달을 떼면 회전이 떨어지며 팝콘" 10
+  rev 70 1.2; sleep 2; rev 90 1.0; sleep 3
+  step "4 주행"
+  caption "기어 D · 주행 중엔 Pleos가 앱 화면을 가려요. Downshift는 화면 대신 소리로" 9 "주행: 화면 대신 소리"
+  post "/vehicle/gear?gear=Drive"; sleep 3; drive limit --ei kph 50
+  caption "가속하면 rpm이 차오르고, 페달을 떼면 팝콘, 감속하면 다운시프트 블립" 14
+  hold_speed 50 8; post "/vehicle/controls?accelerator=0"; sleep 3; post "/vehicle/controls?brake=30"; sleep 2; post "/vehicle/controls?brake=0"
+  caption "회전 30m 전부터 방향지시등을 켜면 +0.5P" 13
+  drive turn --es dir left --ei m 80; post "/vehicle/turn-signal?mode=BlinkLeft"; hold_speed 40 12; post "/vehicle/turn-signal?mode=Off"
+  # 22 km/h: hold_speed swings a few km/h either way, and the zone is kept only if it never goes over 30
+  caption "스쿨존 100m 전부터 엔진음을 줄여요" 11
+  drive school --ei m 120; hold_speed 22 10
+  caption "내비 안내가 나오면 잠시 줄여요" 5
+  drive guide; hold_speed 22 3
+  caption "단속 카메라 앞에서 규정 속도를 지키면 +6P (시연 배속 ×20)" 13
+  drive lapse --ei value 20; hold_speed 22 3; drive camera --ei kph 50 --ei m 1500; hold_speed 45 9
+  step "5 결산과 V12 해금"
+  caption "기어 P · 이번 주행 결산: 거리·제한속도·스쿨존·카메라·방향지시등 포인트" 10 "주행 결산과 V12 해금"
+  stop_car; post "/vehicle/gear?gear=Park"; sleep 8
+  caption "포인트로 V12 해금" 8
+  tap_text "개러지에서 해금하기"; sleep 2; garage tab --es tab engine; sleep 1
+  garage unlock --es part v12; sleep 1.5; garage equip --es part v12; sleep 2; app --es cmd stop; sleep 1
+  step "6 V12 시동"
+  caption "V12로 다시 시동 · 차 안에서만 들리는 내 엔진, Downshift" 14 "V12 시동"
+  drive screen --es to start; sleep 2; hold_text "시동 걸기" 1300; sleep 3; rev 80 1.0; sleep 3; app --es cmd stop; sleep 2
+  drive lapse --ei value 1
+}
+
+pt() {
+  echo "PT rehearsal; PT_AUTO=1 runs straight through, PT_PEDAL=web leaves the revs to the web pedal"
+  setup "${PT_VOLUME:-35}"
+  demo_mode on "${PT_BUTTONS:-off}"; drive lapse --ei value 1
+  drive screen --es to safety; sleep 2
+  "$ADB" logcat -c
+  REC_T0="$(date +%s%3N)"; SRT=/dev/null
+  [ "${PT_AUTO:-0}" = 1 ] || PT_WAIT=1
+  scenes
+  echo "done in $(( ($(date +%s%3N) - REC_T0) / 1000 )) s; $(log | grep -c 'trip done') trip(s) settled"
+  log | grep "trip done" | tail -1 | sed -E 's/.*trip done //'
+  demo_mode on on
+}
+
+youtube() {
+  cat <<EOF
+# 시연 영상 YouTube 업로드용
+
+- 제목: Downshift (다운시프트) — 차 안에서만 들리는 내 엔진 | 2026 현대자동차그룹 차량용 앱 개발 공모전 시연
+- 공개 범위: 일부 공개(미등록)
+- 자막: \`demo.srt\`를 YouTube Studio → 자막 → 파일 업로드(타이밍 포함)
+
+## 설명
+
+Downshift는 법규를 지키며 달려 모은 포인트로 가상 엔진을 조립·튜닝하고, 내 페달에 반응하는 그 엔진 소리를 차 실내 스피커로만 듣는 Pleos Connect 앱입니다.
+Pleos Connect Emulator v2.1.0에서 실제로 돌린 화면과 소리입니다. 기어·페달·좌석은 Virtual Console로 바꾸고, 에뮬레이터 내비가 보내지 않는 제한속도·스쿨존·단속 카메라는 시연 모드에서 넣었습니다.
+주행 중에는 Pleos 규정대로 앱 화면이 가려지고, Downshift는 화면 대신 소리와 기록으로 동작합니다. 결산의 포인트는 시연 지갑의 포인트이고, 카메라 구간부터는 시연 배속 ×20으로 센 거리입니다.
+
+## 챕터
+
+${CHAPTERS}
+EOF
+}
+
+# Ends every subtitle 0.1 s before the next one starts, so a long cue never overlaps the next scene's.
+srt_trim() {
+  python -I - "$1" <<'PY'
+import re, sys
+p = sys.argv[1]
+cues = [c for c in open(p, encoding="utf-8").read().strip().split("\n\n") if c.strip()]
+ms = lambda t: ((int(t[0:2]) * 60 + int(t[3:5])) * 60 + int(t[6:8])) * 1000 + int(t[9:12])
+fmt = lambda v: "%02d:%02d:%02d,%03d" % (v // 3600000, v // 60000 % 60, v // 1000 % 60, v % 1000)
+times = [re.search(r"(\S+) --> (\S+)", c).groups() for c in cues]
+out = []
+for i, c in enumerate(cues):
+    start, end = ms(times[i][0]), ms(times[i][1])
+    if i + 1 < len(cues):
+        end = min(end, ms(times[i + 1][0]) - 100)
+    lines = c.split("\n")
+    out.append("\n".join([lines[0], f"{fmt(start)} --> {fmt(end)}"] + lines[2:]))
+open(p, "w", encoding="utf-8", newline="\n").write("\n\n".join(out) + "\n")
+PY
+}
+
+video() {
+  echo "the PT flow with sound -> docs/m4/demo.webm, demo.srt, youtube.md"
+  setup 45
+  demo_mode on off; drive lapse --ei value 1
+  drive screen --es to safety; sleep 2
+  SRT="$OUT/demo.srt"; : > "$SRT"; CUE=0; CHAPTERS=""
+  "$ADB" logcat -c
+  rec_start demo 178
+  scenes
+  rec_stop; sleep 2
+  volume 20
+  demo_mode on on
+  python -I "$HERE/webm_audio.py" "$OUT/demo.webm"
+  srt_trim "$OUT/demo.srt"
+  youtube > "$OUT/youtube.md"
+  echo "  demo.srt ($CUE cues), youtube.md"
+  log | grep "trip done" | tail -1 | sed -E 's/.*trip done //'
+}
+
+# "yes" when the Pleos home covers the app (its cover is light grey where the app is dark).
+covered() {
+  local tmp; tmp="$(mktemp)"
+  "$ADB" exec-out screencap -p > "$tmp"
+  python -I -c "import sys; from PIL import Image; p = Image.open(sys.argv[1]).convert('RGB').getpixel((1100, 300)); print('yes' if sum(p) > 400 else 'no')" "$tmp"
+  rm -f "$tmp"
+}
+
+# A drive screen capture; M3's (taken in D at rest, the dev row cut off) while the Pleos home covers the app in D.
+drive_shot() {
+  if [ "$(covered)" = no ]; then shot "$1"; return; fi
+  python -I -c "import sys; from PIL import Image; Image.open(sys.argv[1]).crop((0, 40, 1682, 1210)).save(sys.argv[2])" "$HERE/../docs/m3/$2.png" "$OUT/$1.png"
+  echo "  $1.png (M3's $2.png: the Pleos home covers the drive screen in D now)"
+}
+
+shots() {
+  echo "screenshots -> docs/m4/shots/ and 현기차_경진대회/화면캡처_다운시프트/"
+  setup 20
+  demo_mode on off; drive lapse --ei value 1
+  local keep="$OUT" dst="$HERE/../../현기차_경진대회/화면캡처_다운시프트"
+  OUT="$keep/shots/png"; mkdir -p "$OUT"
+  drive screen --es to safety; sleep 2.5; shot 01_onboarding
+  tap_text "위 내용을 확인했고"; sleep 1; tap_text "동의하고 개러지로"; sleep 2.5
+  garage tab --es tab engine; sleep 1; garage preview --es part v8; sleep 9; shot 02_garage_engine
+  garage tab --es tab intake; sleep 1.5; garage preview --es part t3; sleep 9; shot 03_garage_intake
+  drive screen --es to start; sleep 2; hold_text "시동 걸기" 1300; sleep 3.5; shot 04_start_idle; shot 09_full_screen full
+  post "/vehicle/gear?gear=Drive"; sleep 2.5; drive_shot 05_drive 04_drive_d
+  post "/vehicle/seat?kind=occupied&area=passenger&value=true"; sleep 2.5; drive_shot 07_passenger 07_passenger
+  post "/vehicle/seat?kind=occupied&area=passenger&value=false"; sleep 1
+  # A trip that keeps every rule, as in the video: a signalled turn, a school zone at 22 km/h, a camera under its limit.
+  drive limit --ei kph 50; hold_speed 40 5
+  drive turn --es dir left --ei m 80; post "/vehicle/turn-signal?mode=BlinkLeft"; hold_speed 40 9; post "/vehicle/turn-signal?mode=Off"
+  drive school --ei m 60; hold_speed 22 10; stop_car; sleep 2; drive_shot 06_school_zone 05_school_zone
+  drive lapse --ei value 20; hold_speed 22 3; drive camera --ei kph 50 --ei m 1500; hold_speed 45 8
+  stop_car; post "/vehicle/gear?gear=Park"; sleep 3; shot 08_summary
+  drive lapse --ei value 1; app --es cmd stop; demo_mode on on
+  OUT="$keep"
+  python -I "$HERE/export_shots.py" "$OUT/shots/png" "$OUT/shots"
+  mkdir -p "$dst"; cp "$OUT"/shots/*.jpg "$dst"/
+  echo "  copied to $(cd "$dst" && pwd)"
+}
+
 cmd="${1:-}"
 case "$cmd" in
   wallet) wallet ;;
   latency) latency ;;
   cpu) cpu ;;
   background) background ;;
-  *) echo "usage: show.sh wallet|latency|cpu|background"; exit 1 ;;
+  pt) pt ;;
+  video) video ;;
+  shots) shots ;;
+  volume) volume "${2:?index 0..45}"; echo "car volume $(volume_index) / 45" ;;
+  *) echo "usage: show.sh wallet|latency|cpu|background|pt|video|shots|volume N"; exit 1 ;;
 esac
