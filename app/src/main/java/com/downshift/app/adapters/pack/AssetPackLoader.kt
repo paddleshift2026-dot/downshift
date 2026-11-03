@@ -15,7 +15,7 @@ import java.io.FileNotFoundException
 /**
  * Loads assets/engines/<engine>/ (manifest.json plus .dsa or .wav clips, built by tools/pack_builder.py).
  * Licensed packs are not in git, so a missing or broken pack is normal: it logs why and returns null,
- * and the caller falls back to SynthPack.
+ * and the caller falls back to real-time synthesis (ProceduralPack).
  */
 object AssetPackLoader {
     private const val TAG = "DownshiftPack"
