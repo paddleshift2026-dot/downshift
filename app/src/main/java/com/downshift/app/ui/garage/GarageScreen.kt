@@ -40,8 +40,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -79,8 +77,8 @@ import com.downshift.app.ui.Faint
 import com.downshift.app.ui.Gold
 import com.downshift.app.ui.Ground
 import com.downshift.app.ui.Heat
-import com.downshift.app.ui.HoldButton
 import com.downshift.app.ui.Ink
+import com.downshift.app.ui.lineIcon
 import com.downshift.app.ui.Muted
 import com.downshift.app.ui.OnClean
 import com.downshift.app.ui.OnHeat
@@ -243,25 +241,25 @@ private fun EngineName(engine: Part) {
     }
 }
 
-/** Hold to start this build (M1's 0.9 s ignition); while it runs, hold to stop, with the rpm drawn beside the label. */
+/**
+ * Opens the start screen, where START is held to start this build (the design's 시동 button). While the engine runs it
+ * says so, with the rpm drawn beside the label.
+ */
 @Composable
 internal fun StartButton(ui: GarageUi, vm: GarageViewModel, height: Dp) {
-    val context = LocalContext.current
     val rpm = vm.rpm.collectAsStateWithLifecycle()
     val measurer = rememberTextMeasurer()
     val rpmStyle = TextStyle(color = Muted, fontFamily = Condensed, fontWeight = FontWeight.SemiBold, fontSize = 26.sp)
     val on = ui.engineOn
     val shape = RoundedCornerShape(if (height > 80.dp) 20.dp else 16.dp)
-    HoldButton(
-        Modifier.fillMaxWidth().height(height).then(if (on) Modifier.border(1.dp, RuleStrong, shape) else Modifier),
-        enabled = ui.ready, shape = shape,
-        background = if (on) SheetRaised else Heat, fill = if (on) Faint.copy(alpha = 0.35f) else OnHeat.copy(alpha = 0.25f),
-        onHeld = { if (on) vm.stop() else vm.start() },
-        onShortPress = { Toast.makeText(context, if (on) "길게 누르면 시동이 꺼져요" else "길게 누르면 시동이 걸려요", Toast.LENGTH_SHORT).show() },
+    Box(
+        Modifier.fillMaxWidth().height(height).clip(shape).background(if (on) SheetRaised else Heat)
+            .then(if (on) Modifier.border(1.dp, RuleStrong, shape) else Modifier)
+            .clickable(role = Role.Button, onClick = vm::openStart),
     ) {
         Row(Modifier.align(Alignment.Center), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             Icon(GarageIcons.Power, contentDescription = null, tint = if (on) Ink else OnHeat, modifier = Modifier.size(32.dp))
-            Text(if (on) "시동 끄기" else "이 빌드로 시동", color = if (on) Ink else OnHeat, fontSize = if (height > 80.dp) 30.sp else 26.sp, fontWeight = FontWeight.Bold)
+            Text(if (on) "시동 켜짐" else "이 빌드로 시동", color = if (on) Ink else OnHeat, fontSize = if (height > 80.dp) 30.sp else 26.sp, fontWeight = FontWeight.Bold)
         }
         if (on) {
             Spacer(
@@ -479,13 +477,5 @@ internal object GarageIcons {
 
     private const val RECT = "M7 11h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"
 
-    private fun icon(stroke: Float, vararg paths: String) =
-        ImageVector.Builder(defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f).apply {
-            paths.forEach {
-                addPath(
-                    PathParser().parsePathString(it).toNodes(), stroke = SolidColor(Color.White), strokeLineWidth = stroke,
-                    strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round,
-                )
-            }
-        }.build()
+    private fun icon(stroke: Float, vararg paths: String) = lineIcon(stroke, *paths)
 }

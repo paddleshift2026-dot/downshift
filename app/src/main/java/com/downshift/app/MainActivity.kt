@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.downshift.app.ui.garage.GarageScreen
+import com.downshift.app.ui.AppScreen
 import com.downshift.app.ui.ProbeScreen
 import com.downshift.app.ui.SoundLabScreen
 import com.downshift.app.ui.Faint
@@ -52,7 +52,8 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * The garage first; the sound lab and the M0 probe stay behind a slim development row and only run while shown.
+ * The app flow first (first run, garage, start, drive, summary); the sound lab and the M0 probe stay behind a slim
+ * development row and only run while shown.
  */
 @Composable
 private fun Tabs() {
@@ -70,7 +71,7 @@ private fun Tabs() {
             }
         }
         when (tab) {
-            0 -> GarageScreen()
+            0 -> AppScreen()
             1 -> SoundLabScreen()
             else -> ProbeScreen()
         }

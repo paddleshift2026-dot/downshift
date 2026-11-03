@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import com.downshift.app.core.engine.Engines
 import com.downshift.app.core.garage.Garage
 import com.downshift.app.core.garage.Tune
+import com.downshift.app.ui.AppIcons
 import com.downshift.app.ui.Condensed
 import com.downshift.app.ui.Ink
 import com.downshift.app.ui.Muted
@@ -64,8 +66,23 @@ internal fun TuneTab(ui: GarageUi, vm: GarageViewModel) {
             canDec = t.volume > 0, canInc = t.volume < 100,
             onDec = { set(t.copy(volume = t.volume - VOLUME_STEP)) }, onInc = { set(t.copy(volume = t.volume + VOLUME_STEP)) },
         )
+        SafetyNoteRow(vm)
         Spacer(Modifier.height(8.dp))
         DemoButtons(vm)
+    }
+}
+
+/** The first-run safety note, to read again (PRD feature F: "설정에서 다시 볼 수 있어요"). */
+@Composable
+private fun SafetyNoteRow(vm: GarageViewModel) {
+    val shape = RoundedCornerShape(18.dp)
+    Row(
+        Modifier.fillMaxWidth().height(72.dp).clip(shape).border(1.dp, Rule, shape)
+            .clickable(role = Role.Button, onClick = vm::reviewSafety).padding(horizontal = 24.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("안전 안내 다시 보기", Modifier.weight(1f), color = Ink, fontSize = 24.sp)
+        Icon(AppIcons.Forward, contentDescription = null, tint = Muted, modifier = Modifier.size(28.dp))
     }
 }
 

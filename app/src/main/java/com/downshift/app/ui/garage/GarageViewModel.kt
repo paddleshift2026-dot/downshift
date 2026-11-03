@@ -61,6 +61,7 @@ fun fittedOf(s: GarageState): Map<Category, String> = Category.entries.associate
 class GarageViewModel(app: Application) : AndroidViewModel(app) {
     private val host = (app as DownshiftApp).host
     private val repo = (app as DownshiftApp).garage
+    private val drive = (app as DownshiftApp).drive
 
     private val _ui = MutableStateFlow(GarageUi())
     val ui: StateFlow<GarageUi> = _ui.asStateFlow()
@@ -133,9 +134,10 @@ class GarageViewModel(app: Application) : AndroidViewModel(app) {
         commit(toEngine = true) { Garage.tune(it, t) }
     }
 
-    fun start() = host.start()
+    /** The start screen holds the ignition now; the garage only opens it. */
+    fun openStart() = drive.openStart()
 
-    fun stop() = host.stop()
+    fun reviewSafety() = drive.reviewSafety()
 
     fun demoAddPoints(points: Int = DEMO_POINTS) = commit { Garage.addPoints(it, points) }
 
