@@ -1,0 +1,10 @@
+pedal  30%: web message -> sound 68 ms (app 38 + buffer 30) | host send -> sound 58 ms
+pedal  80%: web message -> sound 72 ms (app 42 + buffer 30) | host send -> sound 56 ms
+pedal   0%: web message -> sound 91 ms (app 61 + buffer 30) | host send -> sound 77 ms
+pedal  60%: web message -> sound 93 ms (app 63 + buffer 30) | host send -> sound 78 ms
+pedal   0%: web message -> sound 93 ms (app 63 + buffer 30) | host send -> sound 77 ms
+pedal 100%: web message -> sound 74 ms (app 44 + buffer 30) | host send -> sound 58 ms
+pedal  20%: web message -> sound 105 ms (app 75 + buffer 30) | host send -> sound 89 ms
+pedal   0%: web message -> sound 87 ms (app 57 + buffer 30) | host send -> sound 81 ms
+web message -> sound: median 91 ms, max 105 ms, n=8 (PRD target: median <= 100)
+host send -> sound (clock offset, +-adb RTT/2): median 77 ms, max 89 ms, n=8 (PRD target: median <= 100)

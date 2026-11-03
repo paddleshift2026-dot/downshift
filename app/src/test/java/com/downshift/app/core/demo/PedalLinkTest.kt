@@ -55,4 +55,35 @@ class PedalLinkTest {
         l.tick(1_600)
         assertEquals(80, l.onPedal(80, 1_700))
     }
+
+    @Test
+    fun withTwoPagesTheDeeperPressDrives() {
+        val m = PedalMix<String>()
+        assertEquals(30, m.onPedal("a", 30, 0))
+        assertEquals(70, m.onPedal("b", 70, 0))
+        assertNull(m.onPedal("a", 50, 10))
+        assertEquals(50, m.onPedal("b", 0, 20))
+    }
+
+    @Test
+    fun aPageThatClosesLetsGoOfItsOwnPressOnly() {
+        val m = PedalMix<String>()
+        m.onPedal("a", 30, 0)
+        m.onPedal("b", 80, 0)
+        assertEquals(30, m.onClose("b"))
+        assertEquals(0, m.onClose("a"))
+        assertNull(m.onClose("a"))
+    }
+
+    @Test
+    fun aQuietPageIsLetGoWhileTheOtherKeepsPinging() {
+        val m = PedalMix<String>(staleMs = 1500)
+        m.onPedal("a", 80, 0)
+        m.onPedal("b", 20, 0)
+        m.onMessage("b", 1_000)
+        assertEquals(20, m.tick(1_600))
+        m.onMessage("b", 2_000)
+        assertNull(m.tick(2_600))
+        assertEquals(20, m.pct)
+    }
 }

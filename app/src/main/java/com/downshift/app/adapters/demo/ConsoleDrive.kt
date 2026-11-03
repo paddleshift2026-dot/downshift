@@ -7,6 +7,7 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.Locale
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.floor
 import kotlin.math.roundToInt
 
@@ -16,7 +17,10 @@ data class ConsolePedal(val throttle: Double, val brake: Double, val atMs: Long)
 /** The demo buttons' moves, sent to the console as a driver would make them there. */
 sealed class ConsoleCommand {
     data class Gear(val gear: GearState) : ConsoleCommand()
+    /** The pedal in percent; a newer value replaces one not yet sent (the web pedal sends up to 50 a second). */
     data class Accelerator(val pct: Int) : ConsoleCommand()
+    /** A seat taken or left, e.g. area "passenger". */
+    data class Seat(val area: String, val occupied: Boolean) : ConsoleCommand()
     /** Stop where the car is and put it in park. */
     object Arrive : ConsoleCommand()
 }
@@ -37,6 +41,7 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
     private val car = DemoVehicleModel()
     private val buf = ByteArray(64 * 1024) // polling thread only
     private val commands = ConcurrentLinkedQueue<ConsoleCommand>()
+    private val pendingAccel = AtomicReference<Int?>(null) // the newest pedal not yet written
     // Odometer writing, polling thread only: the console's reading when it connected, and what the demo car added.
     private var odometerBase: Double? = null
     private var demoKm = 0.0
@@ -63,9 +68,12 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
         thread = null
     }
 
-    /** Sent on the polling thread's next turn (any thread may call). */
+    /**
+     * Sent on the polling thread's next turn (any thread may call). Pedal values are folded into one, the newest, so a
+     * pedal moving fast costs at most one write per poll.
+     */
     fun post(cmd: ConsoleCommand) {
-        commands += cmd
+        if (cmd is ConsoleCommand.Accelerator) pendingAccel.set(cmd.pct) else commands += cmd
     }
 
     private fun loop() {
@@ -86,6 +94,7 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
                 if (connected) Log.w(tag, "console stopped answering")
                 connected = false
                 commands.clear()
+                pendingAccel.set(null)
                 sleepMs(RETRY_MS)
                 lastNs = System.nanoTime()
                 continue
@@ -165,10 +174,11 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
 
     private fun sendCommands() {
         while (true) {
-            val c = commands.poll() ?: return
+            val c = commands.poll() ?: break
             val paths = when (c) {
                 is ConsoleCommand.Gear -> listOfNotNull(gearName(c.gear)?.let { "/vehicle/gear?gear=$it" })
-                is ConsoleCommand.Accelerator -> listOf("/vehicle/controls?accelerator=${c.pct.coerceIn(0, 100)}")
+                is ConsoleCommand.Accelerator -> listOf(accelPath(c.pct))
+                is ConsoleCommand.Seat -> listOf("/vehicle/seat?kind=occupied&area=${c.area}&value=${c.occupied}")
                 ConsoleCommand.Arrive -> {
                     car.halt()
                     demoSpeedMps = 0.0
@@ -177,7 +187,12 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
             }
             paths.forEach { p -> if (request("POST", p) != null) Log.i(tag, "console $p") else Log.w(tag, "console refused $p") }
         }
+        // The newest pedal, quietly: the next GET logs the value the console took.
+        val pct = pendingAccel.getAndSet(null) ?: return
+        if (request("POST", accelPath(pct)) == null) Log.w(tag, "console refused accelerator=$pct")
     }
+
+    private fun accelPath(pct: Int) = "/vehicle/controls?accelerator=${pct.coerceIn(0, 100)}"
 
     /** Adds the demo car's distance and moves the console odometer each time it passes another 0.1 km. */
     private fun moveOdometer(km: Double) {

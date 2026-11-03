@@ -36,6 +36,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.nanohttpd.websocket)
     implementation(libs.pleos.vehicle)
     implementation(libs.pleos.navihelper)
 

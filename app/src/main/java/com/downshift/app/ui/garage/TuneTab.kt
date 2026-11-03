@@ -116,7 +116,7 @@ private fun DemoModeRow(on: Boolean, parked: Boolean, vm: GarageViewModel) {
     }
 }
 
-/** What demo mode brings: the dashed buttons on the screens, +1,000 P and the demo state, the distance lapse. */
+/** What demo mode brings: the dashed buttons on the screens, +1,000 P and the demo state, the distance lapse, the web pedal. */
 @Composable
 private fun DemoSection(vm: GarageViewModel) {
     val buttons by vm.demoButtons.collectAsStateWithLifecycle()
@@ -140,6 +140,24 @@ private fun DemoSection(vm: GarageViewModel) {
                 Modifier.padding(top = 8.dp), color = Muted, fontSize = 18.sp,
             )
         }
+        WebPedal(vm)
+    }
+}
+
+/** Where the web pedal is and whether a page is on it (PedalServer, open in demo mode). */
+@Composable
+private fun WebPedal(vm: GarageViewModel) {
+    val p by vm.pedal.collectAsStateWithLifecycle()
+    val (line, color) = when {
+        p.failed -> "서버를 열지 못했어요 (포트 8790)" to Alert
+        p.clients > 0 && p.pct > 0 -> "연결 ${p.clients} · 밟는 중 ${p.pct}%" to Clean
+        p.clients > 0 -> "연결 ${p.clients}" to Clean
+        else -> "기다리는 중" to Muted
+    }
+    Column {
+        Text("웹 페달", color = Ink, fontSize = 22.sp)
+        Text("노트북에서 adb forward tcp:8790 tcp:8790 → 브라우저로 http://127.0.0.1:8790", Modifier.padding(top = 6.dp), color = Muted, fontSize = 18.sp)
+        Text(line, Modifier.padding(top = 8.dp), color = color, fontSize = 22.sp)
     }
 }
 

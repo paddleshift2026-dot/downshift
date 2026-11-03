@@ -7,6 +7,7 @@ import com.downshift.app.DownshiftApp
 import com.downshift.app.DriveLive
 import com.downshift.app.adapters.demo.DemoBus
 import com.downshift.app.adapters.demo.DemoCommand
+import com.downshift.app.adapters.demo.PedalStatus
 import com.downshift.app.core.garage.Catalog
 import com.downshift.app.core.garage.Category
 import com.downshift.app.core.garage.Garage
@@ -144,6 +145,7 @@ class GarageViewModel(app: Application) : AndroidViewModel(app) {
     val demoOn: StateFlow<Boolean> = demo.on
     val demoButtons: StateFlow<Boolean> = demo.buttons
     val live: StateFlow<DriveLive> = drive.live
+    val pedal: StateFlow<PedalStatus> = demo.pedal
 
     /** False, with nothing changed, while a trip is being recorded. */
     fun setDemo(on: Boolean): Boolean = demo.setOn(on)

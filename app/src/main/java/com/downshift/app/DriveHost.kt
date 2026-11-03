@@ -153,6 +153,9 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
         events += DriveEvent.Lapse(x)
     }
 
+    /** The web pedal's passenger buttons: the console's passenger seat (on a car the seat sensor tells the truth). */
+    fun demoSeat(passenger: Boolean) = engine.demo(ConsoleCommand.Seat("passenger", passenger))
+
     private fun onDrive(change: () -> Unit) {
         scope.launch {
             change()
