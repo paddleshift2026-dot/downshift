@@ -14,8 +14,9 @@ data class ConsolePedal(val throttle: Double, val brake: Double, val atMs: Long)
  * Emulator demo driving: reads the Pleos Virtual Console pedals (slider or G29) and, because the console has no
  * physics, runs DemoVehicleModel and writes the speed back so the cluster and the AAOS speed follow the pedal.
  * While fast() (the engine is running) it polls every 30 ms, or 40 ms once the pedal has held still for 2 s;
- * otherwise every 100 ms. On a real car nothing answers
- * on 127.0.0.1:8088, so it only retries once a second and reports nothing.
+ * otherwise every 200 ms (enough for the speed and the garage's parked check; 100 ms put the idle garage over its
+ * 5% CPU budget, M2). On a real car nothing answers on 127.0.0.1:8088, so it only retries once a second and reports
+ * nothing.
  */
 class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Boolean, private val onPedal: (ConsolePedal) -> Unit) {
     private val tag = "DownshiftConsole"
@@ -145,7 +146,7 @@ class ConsoleDrive(private val gear: () -> GearState, private val fast: () -> Bo
         const val FAST_POLL_MS = 30L
         const val STEADY_POLL_MS = 40L
         const val STEADY_MS = 2000L
-        const val SLOW_POLL_MS = 100L
+        const val SLOW_POLL_MS = 200L
         const val RETRY_MS = 1000L
         const val SESSION_MS = 2000L
         const val TIMEOUT_MS = 300

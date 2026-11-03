@@ -76,6 +76,9 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
         pulseVoice = voice
     }
 
+    /** A one-shot (startup, engine off, limiter) is still playing out. */
+    val shotsPlaying: Boolean get() = shots.any { it.clip != null }
+
     fun render(plan: SoundPlan, out: FloatArray, frames: Int) {
         ensureCapacity(frames)
         java.util.Arrays.fill(bus, 0, frames, 0f)

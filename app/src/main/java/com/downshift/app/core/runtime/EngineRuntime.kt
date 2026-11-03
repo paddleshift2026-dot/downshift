@@ -37,6 +37,15 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
     var telemetry: Telemetry = Telemetry.OFF
         private set
 
+    /**
+     * The engine has been off and silent for QUIET_SEC (spun down, no one-shot playing), so blocks are written as
+     * zeros without running the mixer: idle synthesis cost about 2.5% of a core in the garage (M2 measurement).
+     */
+    @Volatile
+    var quiet = false
+        private set
+    private var silentSec = 0.0
+
     private val pendingBuild = AtomicReference<Pair<Build, LoadedPack>?>(null)
     private val pendingFuel = AtomicReference<FuelKind?>(null)
     private val pendingStart = AtomicBoolean(false)
@@ -81,7 +90,11 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
         val s = powertrain.state
         val ind = induction.step(s.rpm, spec.redlineRpm, s.load, dt)
         val popList = pops.step(s.overrun, director.rpmNorm(s.rpm), SoundDirector.popIntensity(build), dt)
-        mixer.render(director.plan(s, events, ind, popList, build, fuel), out, frames)
+        val plan = director.plan(s, events, ind, popList, build, fuel)
+        val still = !s.running && s.rpm == 0.0 && events.isEmpty() && !mixer.shotsPlaying
+        silentSec = if (still) silentSec + dt else 0.0
+        quiet = silentSec >= QUIET_SEC
+        if (quiet) java.util.Arrays.fill(out, 0, frames, 0f) else mixer.render(plan, out, frames)
         telemetry = Telemetry(s.running, s.rpm, s.gear, s.load, ind.state.boost, s.overrun, s.atLimiter)
     }
 
@@ -127,6 +140,7 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
     private companion object {
         const val POP_SEED = 0x5EED_0F_70L
         const val VOICE_SEED = 0x0E_4612L
+        const val QUIET_SEC = 0.5 // pops, blow-off and the exhaust body ring out well within this
 
         fun specFor(build: Build) = Engines.spec(build.engine).withRedlineOffset(build.redlineOffset)
     }
