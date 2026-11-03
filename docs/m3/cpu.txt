@@ -1,0 +1,4 @@
+app %CPU (top, one core = 100), 2026-11-03 15:45
+driving, engine on, D, trip, Pleos SDK on:   mean 15.1, max 21.0 (28 samples)   (budget 20)
+the same, Pleos SDK off:                    mean 15.1, max 19.0 (28 samples)
+garage, engine off, parked:                 mean 3.5, max 5.0 (20 samples)   (budget 5)

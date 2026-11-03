@@ -1,0 +1,6 @@
+music (media usage, full focus) beside the idling engine (game usage, no focus), 2026-11-03 15:45
+players while both play:
+AudioPlaybackConfiguration piid:1839 deviceId:2 type:android.media.AudioTrack u/pid:1010177/5705 state:started attr:AudioAttributes: usage=USAGE_GAME content=CONTENT_TYPE_SONIFICATION flags=0x900 tags= bundle=null sessionId:2609 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=48000}
+AudioPlaybackConfiguration piid:1847 deviceId:2 type:android.media.AudioTrack u/pid:1010177/5705 state:started attr:AudioAttributes: usage=USAGE_MEDIA content=CONTENT_TYPE_MUSIC flags=0x800 tags= bundle=null sessionId:2617 mutedState:none  FormatInfo{isSpatialized=false, channelMask=0x1, sampleRate=48000}
+drive host:
+DownshiftLab: situation NORMAL 80%

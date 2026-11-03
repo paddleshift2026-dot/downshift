@@ -1,0 +1,6 @@
+app memory after the PT flow and the drive checks, 2026-11-03 15:47
+Native Heap    71683    71676        0       17    72524    87296    69545    12780
+Java Heap:    17792                          36568
+Native Heap:    71676                          72524
+Graphics:        0                              0
+TOTAL PSS:   134381            TOTAL RSS:   235020       TOTAL SWAP PSS:      137

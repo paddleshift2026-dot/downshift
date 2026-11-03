@@ -1,0 +1,16 @@
+M1 latency re-run during a trip (engine on, gear D, DriveHost at 10 Hz, Pleos SDK on), 2026-11-03 15:47
+
+## bash tools/sound.sh latency
+device clock - host clock = -2630 ms (adb round trip 126 ms), audio buffer 30 ms
+pedal  30%: console write -> sound 69 ms (app write 39 + buffer 30) | host POST -> sound 136 ms
+pedal  80%: console write -> sound 72 ms (app write 42 + buffer 30) | host POST -> sound 112 ms
+pedal   0%: console write -> sound 60 ms (app write 30 + buffer 30) | host POST -> sound 103 ms
+pedal  60%: console write -> sound 78 ms (app write 48 + buffer 30) | host POST -> sound 118 ms
+pedal   0%: console write -> sound 77 ms (app write 47 + buffer 30) | host POST -> sound 148 ms
+pedal 100%: console write -> sound 91 ms (app write 61 + buffer 30) | host POST -> sound 138 ms
+pedal  20%: console write -> sound 83 ms (app write 53 + buffer 30) | host POST -> sound 125 ms
+pedal   0%: console write -> sound 65 ms (app write 35 + buffer 30) | host POST -> sound 109 ms
+console write -> sound: median 77 ms, max 91 ms, n=8 (target <= 120)
+host POST -> sound (clock offset, +-adb RTT/2): median 125 ms, max 148 ms, n=8 (target <= 120)
+
+M1: median 85 ms, max 98 ms. M2 (garage): median 71 ms, max 87 ms.

@@ -22,3 +22,4 @@ docs/m1/renders/*.wav
 
 # the garage flow recording is large; regenerate it with tools/garage.sh flow
 docs/m2/*.wav
+docs/m3/*.wav

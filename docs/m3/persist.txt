@@ -1,0 +1,7 @@
+trips across a force stop, 2026-11-03 15:41
+1) force stop while driving in D: the trip carries on from its checkpoint
+   resumed: km=0.10 gear=DRIVE
+   done:    km=0.16 known=0.00 kept=0.00 unknown=0.16 places=0/0 turns=0/0 points=1+0+0+0=1 balance=3001 lapse=1
+2) force stop in D with a checkpoint, park while the app is gone, reopen: settled once
+   settled: trip settled after a restart km=0.10 gear=PARK trip done km=0.10 known=0.00 kept=0.00 unknown=0.10 places=0/0 turns=0/0 points=1+0+0+0=1 balance=3002 lapse=1 
+   balance: 3001 -> 3002; settlements after a second restart: 1 (1 = settled once)
