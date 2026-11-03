@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.platform.LocalContext
@@ -264,7 +265,7 @@ internal fun StartButton(ui: GarageUi, vm: GarageViewModel, height: Dp) {
         }
         if (on) {
             Spacer(
-                Modifier.align(Alignment.CenterEnd).padding(end = 28.dp).size(150.dp, 40.dp).drawBehind {
+                Modifier.align(Alignment.CenterEnd).padding(end = 28.dp).size(150.dp, 40.dp).graphicsLayer().drawBehind {
                     val layout = measurer.measure(String.format(Locale.ROOT, "%,d RPM", rpm.value), rpmStyle)
                     drawText(layout, topLeft = Offset(size.width - layout.size.width, (size.height - layout.size.height) / 2))
                 },

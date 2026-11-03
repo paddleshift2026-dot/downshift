@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -162,7 +163,7 @@ internal fun EngineStage(ui: GarageUi, wide: Boolean, modifier: Modifier = Modif
         modifier.size(geo.w.dp, geo.h.dp).clip(RoundedCornerShape(16.dp)).background(StageBackdrop).border(1.dp, StageEdge, RoundedCornerShape(16.dp))
             .semantics {
                 contentDescription = "엔진 돌려보기"
-                stateDescription = if (frame.intValue == 0) "기본 각도" else "${frame.intValue * 15}도 돌림"
+                stateDescription = if (target == 0) "기본 각도" else "${target * 15}도 돌림"
             }
             .pointerInput(geo) {
                 val perFrame = geo.w.dp.toPx() / Turntable.FRAMES
@@ -189,8 +190,9 @@ internal fun EngineStage(ui: GarageUi, wide: Boolean, modifier: Modifier = Modif
                 }
             },
     ) {
+        // Its own layer: a frame step re-records this canvas only, not the whole garage.
         Spacer(
-            Modifier.fillMaxSize().drawBehind {
+            Modifier.fillMaxSize().graphicsLayer().drawBehind {
                 val k = frame.intValue
                 val dst = IntOffset(geo.imgLeft.dp.roundToPx(), geo.imgTop.dp.roundToPx())
                 val size = IntSize(px, px)

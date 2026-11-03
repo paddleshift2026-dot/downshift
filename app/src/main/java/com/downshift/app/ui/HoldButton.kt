@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -43,6 +44,7 @@ internal fun HoldButton(
     val on by rememberUpdatedState(enabled)
     Box(
         modifier.clip(shape).background(background)
+            .graphicsLayer()
             .drawBehind { drawRect(fill, size = size.copy(width = size.width * progress.floatValue)) }
             .pointerInput(Unit) {
                 awaitEachGesture {

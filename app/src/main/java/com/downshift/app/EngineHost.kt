@@ -54,7 +54,8 @@ class EngineHost(private val app: Application) {
     @Volatile private var lastSpeedNs = 0L
     @Volatile private var lastPedalAtMs = 0L
     private val car = CarSignalsAdapter(app) { mps, atNs -> onSpeed(mps, atNs) }
-    private val console = ConsoleDrive(gear = { car.gear }, fast = { telemetry.running }) { p ->
+    // A preview plays its own script, so the pedals only need fast polling while the engine runs outside one.
+    private val console = ConsoleDrive(gear = { car.gear }, fast = { telemetry.running && preview == null }) { p ->
         arbiter.console(p.throttle, p.brake, p.atMs)
         lastPedalAtMs = p.atMs
     }
