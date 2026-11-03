@@ -8,9 +8,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,6 +26,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -33,9 +36,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,6 +52,7 @@ import com.downshift.app.core.build.EngineId
 import com.downshift.app.core.build.ExhaustPart
 import com.downshift.app.core.build.IntakePart
 import com.downshift.app.core.build.TransmissionPart
+import com.downshift.app.core.input.ThrottleSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -53,24 +62,13 @@ import java.util.Locale
 /** Development screen for tuning the engine sound while parked: start, parts, sliders, a manual pedal and recording. */
 @Composable
 fun SoundLabScreen(vm: SoundLabViewModel = viewModel()) {
-    val s by vm.state.collectAsStateWithLifecycle()
-    val b = s.build
+    val c by vm.config.collectAsStateWithLifecycle()
+    val b = c.build
     Column(
         Modifier.fillMaxSize().background(Ground).verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-            HoldButton(
-                label = if (s.telemetry.running) "STOP" else "START",
-                color = if (s.telemetry.running) Faint else Heat,
-                enabled = s.ready,
-            ) { if (s.telemetry.running) vm.stop() else vm.start() }
-            Column {
-                Text("%,.0f rpm".format(s.telemetry.rpm), color = if (s.telemetry.atLimiter) Heat else Ink, fontSize = 40.sp, fontWeight = FontWeight.Bold)
-                Text(telemetryLine(s), color = Muted, fontSize = 18.sp)
-                Text(sourceLine(s), color = Faint, fontSize = 16.sp)
-            }
-        }
+        Gauges(vm, c)
         Choice("엔진", EngineId.entries, b.engine, { it.name }) { vm.setBuild(b.copy(engine = it)) }
         Choice("흡기", IntakePart.entries, b.intake, ::intakeLabel) { vm.setBuild(b.copy(intake = it)) }
         Choice("배기", ExhaustPart.entries, b.exhaust, ::exhaustLabel) { vm.setBuild(b.copy(exhaust = it)) }
@@ -82,18 +80,46 @@ fun SoundLabScreen(vm: SoundLabViewModel = viewModel()) {
         LabeledSlider("볼륨 ${"%.0f".format(b.volume * 100)}%", b.volume.toFloat(), 0f..1f) { vm.setBuild(b.copy(volume = it.toDouble())) }
         ManualPedal(vm)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            val rec = s.recording
+            val rec = c.recording
             Button(
                 onClick = { if (rec == null) vm.record(true, "lab_" + SimpleDateFormat("MMdd_HHmmss", Locale.ROOT).format(Date())) else vm.record(false) },
                 colors = ButtonDefaults.buttonColors(containerColor = if (rec == null) Panel else Heat),
             ) { Text(if (rec == null) "녹음 시작" else "녹음 끝 ($rec)", color = Ink, fontSize = 18.sp) }
-            Text(s.audioInfo, color = Faint, fontSize = 14.sp)
+            Text(c.audioInfo, color = Faint, fontSize = 14.sp)
         }
-        if (s.latency.isNotEmpty()) Text(s.latency, color = Faint, fontSize = 14.sp)
     }
 }
 
-private fun telemetryLine(s: SoundLabState): String {
+/**
+ * The only part that changes five times a second. The live values are read in the draw phase, so an update
+ * redraws this box without recomposing or laying out the screen (a full frame cost about 25 ms on the emulator).
+ */
+@Composable
+private fun Gauges(vm: SoundLabViewModel, c: LabConfig) {
+    val live = vm.live.collectAsStateWithLifecycle()
+    val running by remember { derivedStateOf { live.value.telemetry.running } }
+    val measurer = rememberTextMeasurer()
+    val big = TextStyle(color = Ink, fontSize = 40.sp, fontWeight = FontWeight.Bold)
+    val line = TextStyle(color = Muted, fontSize = 18.sp)
+    val small = TextStyle(color = Faint, fontSize = 16.sp)
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+        HoldButton(label = if (running) "STOP" else "START", color = if (running) Faint else Heat, enabled = c.ready) {
+            if (running) vm.stop() else vm.start()
+        }
+        Spacer(
+            Modifier.fillMaxWidth().height(140.dp).drawBehind {
+                val l = live.value
+                val rpm = "%,.0f rpm".format(l.telemetry.rpm)
+                drawText(measurer, rpm, style = if (l.telemetry.atLimiter) big.copy(color = Heat) else big)
+                drawText(measurer, telemetryLine(l), Offset(0f, 58.dp.toPx()), style = line)
+                drawText(measurer, sourceLine(l, c), Offset(0f, 86.dp.toPx()), style = small)
+                if (l.latency.isNotEmpty()) drawText(measurer, l.latency, Offset(0f, 112.dp.toPx()), style = small)
+            },
+        )
+    }
+}
+
+private fun telemetryLine(s: LabLive): String {
     val t = s.telemetry
     val gear = when {
         !t.running -> "-"
@@ -105,15 +131,15 @@ private fun telemetryLine(s: SoundLabState): String {
     return "$gear · 부하 ${"%.0f".format(t.load * 100)}%$boost · ${"%.0f".format(s.speedKph)} km/h${if (t.overrun) " · 오버런" else ""}"
 }
 
-private fun sourceLine(s: SoundLabState): String {
+private fun sourceLine(s: LabLive, c: LabConfig): String {
     val src = when {
         s.manual -> "화면 페달"
-        s.source.name == "CONSOLE" -> "콘솔 페달"
-        s.source.name == "MANUAL" -> "adb 페달"
+        s.source == ThrottleSource.CONSOLE -> "콘솔 페달"
+        s.source == ThrottleSource.MANUAL -> "adb 페달"
         else -> "차속 추정"
     }
-    val console = if (s.consoleConnected) "콘솔 연결" else "콘솔 없음"
-    return "입력 $src ${"%.0f".format(s.throttle * 100)}% · $console · 팩 ${s.packSource} · 연료 ${s.fuel}"
+    val console = if (c.consoleConnected) "콘솔 연결" else "콘솔 없음"
+    return "입력 $src ${"%.0f".format(s.throttle * 100)}% · $console · 팩 ${c.packSource} · 연료 ${c.fuel}"
 }
 
 private fun intakeLabel(p: IntakePart) = when (p) {

@@ -15,18 +15,26 @@ import com.downshift.app.core.model.GearState
 import com.downshift.app.core.model.VehicleSignals
 
 /**
- * The car signals the engine needs: AAOS speed, gear selector and fuel type, plus the Pleos brake pedal.
+ * The car signals the engine needs: AAOS speed, gear selector and fuel type, and optionally the Pleos brake pedal.
  * Callbacks run on a HandlerThread so the UI thread stays free. Every speed sample also goes to onSpeedSample
  * (m/s, event time in elapsed-realtime nanoseconds) for the load estimate.
+ *
+ * The Pleos brake is off by default: once initialised, the Pleos Vehicle SDK kept about 7% of a core busy on the
+ * main thread of the emulator (M1 measurement), and the engine sound does not use the brake (demos take it from
+ * the console).
  */
-class CarSignalsAdapter(context: Context, private val onSpeedSample: (Double, Long) -> Unit = { _, _ -> }) {
+class CarSignalsAdapter(
+    context: Context,
+    private val usePleosBrake: Boolean = false,
+    private val onSpeedSample: (Double, Long) -> Unit = { _, _ -> },
+) {
     private val tag = "DownshiftCar"
     private val appContext = context.applicationContext
     private val thread = HandlerThread("DownshiftCar")
     private var car: Car? = null
     private var properties: CarPropertyManager? = null
     private val callbacks = mutableListOf<CarPropertyManager.CarPropertyEventCallback>()
-    private val vehicle = Vehicle(appContext)
+    private val vehicle by lazy { Vehicle(appContext) }
     private var vehicleUp = false
 
     @Volatile var speedMps = 0.0
@@ -70,14 +78,16 @@ class CarSignalsAdapter(context: Context, private val onSpeedSample: (Double, Lo
                 }
             }
         }
-        try {
-            vehicle.initialize()
-            vehicleUp = true
-            guard("brake") { vehicle.getBrake().registerBrakePedalStatus(brakeListener) }
-        } catch (e: Exception) {
-            warn("vehicle.initialize", e)
+        if (usePleosBrake) {
+            try {
+                vehicle.initialize()
+                vehicleUp = true
+                guard("brake") { vehicle.getBrake().registerBrakePedalStatus(brakeListener) }
+            } catch (e: Exception) {
+                warn("vehicle.initialize", e)
+            }
         }
-        Log.i(tag, "car signals started: fuel=$fuel")
+        Log.i(tag, "car signals started: fuel=$fuel pleosBrake=$usePleosBrake")
     }
 
     fun stop() {

@@ -16,3 +16,6 @@ audio_test/
 app/src/debug/assets/loops/
 # licensed engine packs (built by tools/pack_builder.py) stay out of git
 app/src/main/assets/engines/
+
+# emulator recordings of the synth pack are large; regenerate them with tools/sound.sh
+docs/m1/renders/*.wav

@@ -34,20 +34,25 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-data class SoundLabState(
+/** What changes rarely: the build and where things come from. */
+data class LabConfig(
     val ready: Boolean = false,
     val build: Build = Build(),
+    val packSource: String = "",
+    val consoleConnected: Boolean = false,
+    val fuel: FuelKind = FuelKind.UNKNOWN,
+    val audioInfo: String = "",
+    val recording: String? = null,
+)
+
+/** What changes five times a second while the engine runs; kept apart so only the gauges redraw. */
+data class LabLive(
     val telemetry: Telemetry = Telemetry.OFF,
     val speedKph: Double = 0.0,
     val throttle: Double = 0.0,
     val source: ThrottleSource = ThrottleSource.ESTIMATE,
     val manual: Boolean = false,
-    val packSource: String = "",
-    val consoleConnected: Boolean = false,
-    val fuel: FuelKind = FuelKind.UNKNOWN,
-    val audioInfo: String = "",
     val latency: String = "",
-    val recording: String? = null,
 )
 
 /**
@@ -64,7 +69,7 @@ class SoundLabViewModel(app: Application) : AndroidViewModel(app) {
     @Volatile private var lastInputs = DriveInputs(0.0, 0.0, 0.0, GearState.UNKNOWN)
     @Volatile private var lastSource = ThrottleSource.ESTIMATE
     private val car = CarSignalsAdapter(app) { mps, atNs -> onSpeed(mps, atNs) }
-    private val console = ConsoleDrive(gear = { car.gear }) { p ->
+    private val console = ConsoleDrive(gear = { car.gear }, fast = { runtime?.telemetry?.running == true }) { p ->
         arbiter.console(p.throttle, p.brake, p.atMs)
         lastPedalAtMs = p.atMs
     }
@@ -76,8 +81,10 @@ class SoundLabViewModel(app: Application) : AndroidViewModel(app) {
     private var manual: Double? = null
     private var recording: String? = null
 
-    private val _state = MutableStateFlow(SoundLabState())
-    val state: StateFlow<SoundLabState> = _state.asStateFlow()
+    private val _config = MutableStateFlow(LabConfig())
+    val config: StateFlow<LabConfig> = _config.asStateFlow()
+    private val _live = MutableStateFlow(LabLive())
+    val live: StateFlow<LabLive> = _live.asStateFlow()
 
     init {
         car.start()
@@ -98,7 +105,11 @@ class SoundLabViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { DemoBus.commands.collect { handle(it) } }
     }
 
-    fun start() = runtime?.start()
+    fun start() {
+        runtime?.start()
+        // tools/sound.sh latency reads the buffer length from this line.
+        output?.let { Log.i("DownshiftAudio", "AudioTrack ${it.bufferInfo}") }
+    }
 
     fun stop() = runtime?.stop()
 
@@ -138,8 +149,9 @@ class SoundLabViewModel(app: Application) : AndroidViewModel(app) {
     private fun inputs(): DriveInputs {
         arbiter.vehicleBrake(car.brakePressed)
         val p = arbiter.pick(System.currentTimeMillis(), estimate)
-        // Before the first AAOS speed sample (e.g. CAR_SPEED not granted) the demo speed stands in.
-        val speed = if (lastSpeedNs == 0L && console.connected) console.demoSpeedMps else car.speedMps
+        // In the demo the app computes the speed itself (50 Hz, continuous); the AAOS copy comes back in whole km/h
+        // about ten times a second, so it only drives the cluster. On a real car AAOS is the only source.
+        val speed = if (console.connected && console.demoPhysics) console.demoSpeedMps else car.speedMps
         lastSource = p.source
         return DriveInputs(p.throttle, p.brake, speed, car.gear).also { lastInputs = it }
     }
@@ -167,22 +179,25 @@ class SoundLabViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun publish() {
         val rt = runtime
-        val lat = output?.latency
-        fun f(v: Double?) = v?.let { "%.0f".format(it) } ?: "-"
-        _state.value = SoundLabState(
+        val out = output
+        _config.value = LabConfig(
             ready = rt != null,
             build = build,
+            packSource = packSource,
+            consoleConnected = console.connected,
+            fuel = car.fuel,
+            audioInfo = out?.bufferInfo ?: "",
+            recording = recording,
+        )
+        val lat = out?.latency
+        fun f(v: Double?) = v?.let { "%.0f".format(it) } ?: "-"
+        _live.value = LabLive(
             telemetry = rt?.telemetry ?: Telemetry.OFF,
             speedKph = lastInputs.speedMps * 3.6,
             throttle = lastInputs.throttle,
             source = lastSource,
             manual = manual != null,
-            packSource = packSource,
-            consoleConnected = console.connected,
-            fuel = car.fuel,
-            audioInfo = output?.bufferInfo ?: "",
             latency = if (lat == null || lat.count == 0) "" else "페달→소리 p50 ${f(lat.p50())} / p95 ${f(lat.p95())} ms (n=${lat.count})",
-            recording = recording,
         )
     }
 
@@ -193,7 +208,8 @@ class SoundLabViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private companion object {
-        const val UI_MS = 100L
+        // Each frame of this screen costs about 25 ms of CPU on the emulator (software rendering), so 5 Hz, not 10.
+        const val UI_MS = 200L
         const val MAX_RECORD_SEC = 60
     }
 }
