@@ -13,8 +13,8 @@ android {
         applicationId = "com.downshift.app"
         minSdk = 28
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.0.1-m0"
+        versionCode = 4
+        versionName = "0.4.0"
     }
 
     buildTypes {
