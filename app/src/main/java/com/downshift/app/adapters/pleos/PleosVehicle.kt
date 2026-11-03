@@ -15,10 +15,12 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * The Pleos Vehicle SDK signals a trip needs: the turn-signal stalk, the odometer (km, handed to onOdometer) and
  * whether anyone sits beside or behind the driver. Start it only while it is needed: once initialised, the SDK kept
- * about 7% of a core busy on the emulator's main thread (M1). A seat callback carries the previous value (M0), so it
- * only says "changed" and the seat is read again. Failures are logged and leave the last values.
+ * about 7% of a core busy on the emulator's main thread (M1). A seat callback only says "changed" and the seat is read
+ * again. Against the Virtual Console every seat reads the opposite of the console's own state (all seats empty there
+ * read occupied, M3; M0 took this for a lagging callback), so invertSeats() flips them while the console is in use.
+ * Failures are logged and leave the last values.
  */
-class PleosVehicle(context: Context, private val onOdometer: (Double) -> Unit) {
+class PleosVehicle(context: Context, private val invertSeats: () -> Boolean, private val onOdometer: (Double) -> Unit) {
     private val tag = "DownshiftPleos"
     private val appContext = context.applicationContext
     @Volatile private var vehicle: Vehicle? = null
@@ -67,6 +69,12 @@ class PleosVehicle(context: Context, private val onOdometer: (Double) -> Unit) {
         Log.i(tag, "vehicle signals on")
     }
 
+    /** Asks for the odometer now (a trip's starting reading); the answer goes to onOdometer like any other. */
+    fun readOdometer() {
+        val v = vehicle ?: return
+        guard("odometer now") { v.getOdometer().getCurrentDistanceDriven({ odometer(it) }, { e -> warn("odometer now", e) }) }
+    }
+
     fun stop() {
         val v = vehicle ?: return
         vehicle = null
@@ -97,11 +105,12 @@ class PleosVehicle(context: Context, private val onOdometer: (Double) -> Unit) {
 
     private fun readSeat(v: Vehicle, area: SeatArea) = guard("seat read ${name(area)}") {
         v.getSeat().getCurrentSeatOccupancy(area, { occupied ->
-            seats[name(area)] = occupied == true
+            val now = (occupied == true) != invertSeats()
+            if (seats.put(name(area), now) != now) Log.i(tag, "seat ${name(area)} $now")
             val anyone = seats.values.any { it }
             if (anyone != passenger) {
                 passenger = anyone
-                Log.i(tag, "passenger $anyone (${name(area)} $occupied)")
+                Log.i(tag, "passenger $anyone")
             }
         }, { e -> warn("seat read ${name(area)}", e) })
     }

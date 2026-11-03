@@ -9,4 +9,12 @@ class DownshiftApp : Application() {
 
     /** The one engine every screen shares, made on first use and fitted with the saved garage build. */
     val host: EngineHost by lazy { EngineHost(this).also { it.setBuild(Garage.build(garage.state.value)) } }
+
+    /** Trips, points and the situation volume; made with the process so the gear is watched with no screen up. */
+    val drive: DriveHost by lazy { DriveHost(this, host, garage) }
+
+    override fun onCreate() {
+        super.onCreate()
+        drive
+    }
 }

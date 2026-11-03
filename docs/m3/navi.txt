@@ -1,0 +1,32 @@
+What the emulator's navigation and Pleos signals sent to Downshift (DriveHost adapters), 2026-11-03
+
+## NaviHelper (NaviEvents, tag DownshiftNavi)
+- Connects at app start once the safety note is agreed to: "navi connected".
+- onCurrentRoadSpeedLimit: 0 only, and repeated. An adb limit (drive --es event limit) therefore stands on its own
+  until adb sets 0; otherwise the navi's next 0 would wipe it.
+- Route requested with `probe.sh route` from the probe tab (Seoul Station from Pangyo):
+    tbt TURN_RIGHT 700.0 대왕판교IC 방면 (14 ahead)
+    turn RIGHT city 700.0m (TURN_RIGHT)
+  TBTInfo.distance is in metres. The car does not move along the route on the emulator, so the turn stays 700 m away;
+  cancel the route before scripted drives (`drive --es event route --es value cancel`), or a demo drive of 700 m
+  would judge that stale turn.
+- onCameraAlert / onCautionPointInfo: nothing in 20 s with a route on (as in M0). Demo drives inject them.
+
+## Pleos Vehicle SDK (PleosVehicle, tag DownshiftPleos)
+- Turn signal: console BlinkLeft / Off arrive as "signal LEFT" / "signal OFF" within about 0.1 s.
+- Odometer: the console odometer, moved by ConsoleDrive every 0.1 km of the demo car, arrives through
+  registerDistanceDriven (also re-sent unchanged every ~4 s). A 0.20 km trip read 0.20 km from the odometer.
+- Seats: every seat reads the opposite of the console's own state. With the console's `seat.occupied` all false
+  (driver included), getCurrentSeatOccupancy said ROW_1_RIGHT, ROW_2_LEFT, ROW_2_CENTER and ROW_2_RIGHT were occupied;
+  seating the passenger read false, leaving read true. M0 took this for a lagging callback; it is an inversion, and
+  re-reading does not change it. PleosVehicle flips seat values while the Virtual Console is connected and trusts the
+  SDK otherwise (real car unverified).
+
+## Sanity drive (scratchpad m3_check.sh): engine on, D, 35% pedal 8 s then coasting, limit 50, a left turn 120 m
+## ahead with the console signal on from about 75 m, a camera at 200 m (50 km/h), passenger in, guidance tone, park
+    trip start target=v12 balance=3000
+    signal LEFT ... signal OFF
+    seat ROW_1_RIGHT true / passenger true / situation PASSENGER 40%
+    priority GUIDANCE / situation GUIDANCE 10% ... priority NONE / (0.8 s later) situation PASSENGER 40%
+    trip done km=0.20 known=0.20 kept=0.20 unknown=0.00 places=1/1 turns=1/1 points=1+0+6+1=8 balance=3008 lapse=1
+    seat ROW_1_RIGHT false / passenger false / situation NORMAL 80%

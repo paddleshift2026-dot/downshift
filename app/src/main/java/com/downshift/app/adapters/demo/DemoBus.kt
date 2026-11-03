@@ -77,7 +77,7 @@ object DemoBus {
  *              drive --es event section --ei kph 80 --ei m 100 --ei len 1000 | school --ei m 150 [--ei kph 30]
  *              drive --es event turn --es dir left|right [--es road highway] --ei m 120
  *              drive --es event quiet --es value on|off | guide | music | mute --es value on|off
- *              drive --es event lapse --ei value 20 (1 = off) | pleos --es value off|auto
+ *              drive --es event lapse --ei value 20 (1 = off) | pleos --es value off|auto | route --es value cancel
  *   sound lab: start | stop | throttle --ef value 0..1 | throttle --es value clear
  *              build [--es engine I4|V8|V12] [--es intake NA|TURBO1|TURBO2|TURBO3|SUPERCHARGER] [--es exhaust STOCK|SPORT|TRACK]
  *                    [--es trans AT|DCT|MT] [--ef pops 0..1] [--ei redline -500..500] [--ef volume 0..1]

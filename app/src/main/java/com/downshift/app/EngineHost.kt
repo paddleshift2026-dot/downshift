@@ -7,6 +7,7 @@ import android.os.Looper
 import android.util.Log
 import com.downshift.app.adapters.audio.EngineAudioOutput
 import com.downshift.app.adapters.car.CarSignalsAdapter
+import com.downshift.app.adapters.demo.ConsoleCommand
 import com.downshift.app.adapters.demo.ConsoleDrive
 import com.downshift.app.adapters.demo.DemoBus
 import com.downshift.app.adapters.demo.DemoCommand
@@ -67,7 +68,7 @@ class EngineHost(private val app: Application) {
     @Volatile private var preview: Preview? = null
 
     /** The driver's build, not the preview's. */
-    var build = Build()
+    @Volatile var build = Build()
         private set
     /** The driver's start and stop; a preview may run the engine while this stays off. */
     var engineOn = false
@@ -94,8 +95,14 @@ class EngineHost(private val app: Application) {
     val parked: Boolean
         get() {
             val g = car.gear
-            return (g == GearState.PARK || g == GearState.NEUTRAL || g == GearState.UNKNOWN) && speedMps() < PARKED_MPS
+            return (g == GearState.PARK || g == GearState.NEUTRAL || g == GearState.UNKNOWN) && roadSpeedMps() < PARKED_MPS
         }
+
+    /** The selector as AAOS last reported it. */
+    val gear: GearState get() = car.gear
+
+    /** The road speed the engine uses: the demo car's on the emulator, AAOS otherwise. */
+    val speedMps: Double get() = roadSpeedMps()
 
     init {
         car.start()
@@ -134,6 +141,14 @@ class EngineHost(private val app: Application) {
         build = b.copy(pops = b.pops.coerceIn(0.0, 1.0), volume = b.volume.coerceIn(0.0, 1.0), redlineOffset = b.redlineOffset.coerceIn(-limit, limit))
         play(build)
     }
+
+    /** The situation's share of the volume (DriveHost: guidance, school zone, passenger, mute). */
+    fun setSituationGain(g: Double) {
+        runtime?.setSituationGain(g)
+    }
+
+    /** Demo buttons: a move made on the Virtual Console, as the driver would (dropped on a real car). */
+    fun demo(cmd: ConsoleCommand) = console.post(cmd)
 
     /** null hands the pedal back to the console or the estimate. */
     fun setManualThrottle(value: Double?) {
@@ -232,12 +247,12 @@ class EngineHost(private val app: Application) {
         arbiter.vehicleBrake(car.brakePressed)
         val pick = arbiter.pick(System.currentTimeMillis(), estimate)
         lastSource = pick.source
-        return DriveInputs(pick.throttle, pick.brake, speedMps(), car.gear).also { lastInputs = it }
+        return DriveInputs(pick.throttle, pick.brake, roadSpeedMps(), car.gear).also { lastInputs = it }
     }
 
     // In the demo the app computes the speed itself (50 Hz, continuous); the AAOS copy comes back in whole km/h
     // about ten times a second, so it only drives the cluster. On a real car AAOS is the only source.
-    private fun speedMps() = if (console.connected && console.demoPhysics) console.demoSpeedMps else car.speedMps
+    private fun roadSpeedMps() = if (console.connected && console.demoPhysics) console.demoSpeedMps else car.speedMps
 
     private fun onSpeed(mps: Double, atNs: Long) {
         val prev = lastSpeedNs

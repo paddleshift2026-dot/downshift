@@ -24,6 +24,7 @@ class NaviEvents(context: Context, private val onEvent: (DriveEvent) -> Unit) {
     private val navi = NaviHelper(context.applicationContext)
     private var started = false
     @Volatile private var lastLimit = -1
+    @Volatile private var lastTbt = ""
 
     private val listener = object : NaviHelperEventListener {
         override fun onCurrentRoadSpeedLimit(speedLimit: Int) {
@@ -34,6 +35,9 @@ class NaviEvents(context: Context, private val onEvent: (DriveEvent) -> Unit) {
 
         override fun onTBTInfo(tbtInfoList: List<TBTInfo>) {
             val next = tbtInfoList.firstOrNull() ?: return
+            val raw = "${next.type.name} ${next.distance} ${next.description}"
+            if (raw != lastTbt) Log.i(tag, "tbt $raw (${tbtInfoList.size} ahead)")
+            lastTbt = raw
             val (side, highway) = TurnKinds.of(next.type.name) ?: return
             Log.i(tag, "turn $side ${if (highway) "highway" else "city"} ${next.distance}m (${next.type.name})")
             onEvent(DriveEvent.Turn(TurnAhead(side, highway, next.distance)))
@@ -68,6 +72,12 @@ class NaviEvents(context: Context, private val onEvent: (DriveEvent) -> Unit) {
                 { e -> Log.w(tag, "navi connect failed: ${e.message}") },
             )
         }.onFailure { Log.w(tag, "navi init failed: ${it.message}") }
+    }
+
+    /** Ends the built-in navigation's guidance (demo hook: an emulator route never moves, so its turns go stale). */
+    fun cancelRoute() {
+        runCatching { navi.cancelRoute() }.onFailure { Log.w(tag, "cancelRoute: ${it.message}") }
+        Log.i(tag, "route cancelled")
     }
 
     fun stop() {
