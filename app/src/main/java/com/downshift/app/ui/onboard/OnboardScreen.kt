@@ -1,6 +1,5 @@
 package com.downshift.app.ui.onboard
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,11 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.PathParser
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +39,7 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.downshift.app.DownshiftApp
 import com.downshift.app.ui.AppIcons
+import com.downshift.app.ui.BrandMark
 import com.downshift.app.ui.Calm
 import com.downshift.app.ui.CalmLine
 import com.downshift.app.ui.CalmSheet
@@ -69,7 +65,7 @@ fun OnboardScreen() {
     var agreed by rememberSaveable { mutableStateOf(false) }
     Box(Modifier.fillMaxSize().background(Ground), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = 760.dp).fillMaxHeight().padding(start = 40.dp, end = 40.dp, top = 56.dp, bottom = 40.dp)) {
-            Image(rememberVectorPainter(Logo), contentDescription = null, modifier = Modifier.size(72.dp))
+            BrandMark(56.dp)
             Text(
                 "차 안에서만 들리는\n내 엔진", Modifier.padding(top = 28.dp),
                 color = Ink, fontSize = 52.sp, lineHeight = 63.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.02).em,
@@ -135,14 +131,3 @@ private fun Promise(icon: ImageVector?, title: String, body: String, calm: Boole
         }
     }
 }
-
-/** The app mark: a gauge arc, the heat part of it filled, and the needle (48-unit viewBox, three colours). */
-private val Logo: ImageVector = ImageVector.Builder(defaultWidth = 72.dp, defaultHeight = 72.dp, viewportWidth = 48f, viewportHeight = 48f).apply {
-    listOf(
-        Triple("M10.14 34 A 16 16 0 1 1 37.86 34", Color(0xFF2A2E34), 5f),
-        Triple("M10.14 34 A 16 16 0 0 1 32 12.14", Heat, 5f),
-        Triple("M24 26 L 30 17", Ink, 3f),
-    ).forEach { (d, color, width) ->
-        addPath(PathParser().parsePathString(d).toNodes(), stroke = SolidColor(color), strokeLineWidth = width, strokeLineCap = StrokeCap.Round)
-    }
-}.build()

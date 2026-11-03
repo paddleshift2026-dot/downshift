@@ -1,0 +1,9 @@
+<resources>
+    <!-- Android 12+ shows a system splash with the app icon at every cold start. Here it is a plain Ground screen, so it
+         runs straight into the team wordmark intro (ui/Brand.kt) instead of showing two splashes in a row. -->
+    <style name="Theme.Downshift" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowSplashScreenBackground">#0C0D0F</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_blank</item>
+    </style>
+</resources>

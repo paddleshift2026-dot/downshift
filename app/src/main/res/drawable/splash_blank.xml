@@ -1,0 +1,4 @@
+<!-- No icon on the system splash (values-v31/themes.xml): the wordmark intro follows it. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@android:color/transparent" />
+</shape>

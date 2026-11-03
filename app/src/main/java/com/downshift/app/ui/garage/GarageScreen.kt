@@ -70,6 +70,7 @@ import com.downshift.app.core.garage.Part
 import com.downshift.app.core.garage.PartKind
 import com.downshift.app.core.garage.PartStatus
 import com.downshift.app.core.garage.SoundCharacter
+import com.downshift.app.ui.BrandMark
 import com.downshift.app.ui.Clean
 import com.downshift.app.ui.Condensed
 import com.downshift.app.ui.DemoChip
@@ -118,7 +119,7 @@ fun GarageScreen(vm: GarageViewModel = viewModel()) {
     }
 }
 
-/** The title, the park chip, "시연" in demo mode, and the balance of the wallet in use. */
+/** The team mark, the title, the park chip, "시연" in demo mode, and the balance of the wallet in use. */
 @Composable
 private fun Header(balance: Int, parked: Boolean, wide: Boolean, demo: Boolean) {
     Row(
@@ -127,6 +128,7 @@ private fun Header(balance: Int, parked: Boolean, wide: Boolean, demo: Boolean) 
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            BrandMark(44.dp)
             Text("개러지", color = Ink, fontSize = 40.sp, fontWeight = FontWeight.Bold)
             Row(
                 Modifier.height(44.dp).border(1.dp, RuleStrong, CircleShape).padding(start = 7.dp, end = 16.dp),

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- In-app team mark: the launcher icon's wheel and paddles cropped to the symbol (garage header, safety note).
+     Same shapes as ic_launcher_foreground.xml. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="58.96dp"
+    android:height="38.08dp"
+    android:viewportWidth="58.96"
+    android:viewportHeight="38.08">
+    <group android:translateX="-24.52" android:translateY="-34.92">
+        <path
+            android:fillColor="#F2F3F5"
+            android:pathData="M56.25,36.64 A18,18 0 1 1 51.75,36.64 L51.75,39.91 A14.76,14.76 0 1 0 56.25,39.91 Z" />
+        <path
+            android:fillColor="#F2F3F5"
+            android:pathData="M54,52.34 L38.34,51.8 L38.34,57.2 L54,56.66 Z" />
+        <path
+            android:fillColor="#F2F3F5"
+            android:pathData="M54,56.66 L69.66,57.2 L69.66,51.8 L54,52.34 Z" />
+        <path
+            android:fillColor="#F2F3F5"
+            android:pathData="M51.84,54.5 L50.4,70.16 L57.6,70.16 L56.16,54.5 Z" />
+        <path
+            android:fillColor="#F2F3F5"
+            android:pathData="M49.5,54.5 A4.5,4.5 0 1 0 58.5,54.5 A4.5,4.5 0 1 0 49.5,54.5 Z" />
+        <path
+            android:fillColor="#26C590"
+            android:pathData="M53.01,36.41 A0.99,0.99 0 0 1 54.99,36.41 L54.99,39.83 A0.99,0.99 0 0 1 53.01,39.83 Z" />
+        <path
+            android:fillColor="#FF7A30"
+            android:strokeColor="#FF7A30"
+            android:strokeWidth="3.24"
+            android:strokeLineJoin="round"
+            android:pathData="M34.6,46.3 A10.26,10.26 0 0 0 26.64,56.3 A10.26,10.26 0 0 0 36.73,66.56 A21.06,21.06 0 0 1 34.6,46.3 Z" />
+        <path
+            android:fillColor="#F2F3F5"
+            android:strokeColor="#F2F3F5"
+            android:strokeWidth="3.24"
+            android:strokeLineJoin="round"
+            android:pathData="M73.4,46.3 A10.26,10.26 0 0 1 81.36,56.3 A10.26,10.26 0 0 1 71.27,66.56 A21.06,21.06 0 0 0 73.4,46.3 Z" />
+        <path
+            android:fillColor="#F2F3F5"
+            android:pathData="M28.21,55.62 L31.54,55.62 A0.67,0.67 0 0 1 31.54,56.98 L28.21,56.98 A0.67,0.67 0 0 1 28.21,55.62 Z" />
+        <path
+            android:fillColor="#0C0D0F"
+            android:pathData="M76.64,55.62 L79.6,55.62 A0.67,0.67 0 0 1 79.6,56.98 L76.64,56.98 A0.67,0.67 0 0 1 76.64,55.62 Z" />
+        <path
+            android:fillColor="#0C0D0F"
+            android:pathData="M77.45,54.82 A0.67,0.67 0 0 1 78.8,54.82 L78.8,57.78 A0.67,0.67 0 0 1 77.45,57.78 Z" />
+    </group>
+</vector>
