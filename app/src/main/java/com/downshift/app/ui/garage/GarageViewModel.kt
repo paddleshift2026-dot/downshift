@@ -54,12 +54,13 @@ fun fittedOf(s: GarageState): Map<Category, String> = Category.entries.associate
 
 /**
  * The garage's state and moves: pick parts, preview them (even locked ones), unlock with points, equip, tune, and the
- * demo buttons. Every change is saved at once and an equip or tune goes straight to the shared engine. Changes need
- * the car parked; the demo buttons always work. adb (DemoBus) reaches the same moves.
+ * demo buttons. Every change goes through the app's one GarageRepository (saved at once, worked out from its latest
+ * state, so a trip's points arriving there are never overwritten), and an equip or tune goes straight to the shared
+ * engine. Changes need the car parked; the demo buttons always work. adb (DemoBus) reaches the same moves.
  */
 class GarageViewModel(app: Application) : AndroidViewModel(app) {
     private val host = (app as DownshiftApp).host
-    private val store = (app as DownshiftApp).garageStore
+    private val repo = (app as DownshiftApp).garage
 
     private val _ui = MutableStateFlow(GarageUi())
     val ui: StateFlow<GarageUi> = _ui.asStateFlow()
@@ -68,9 +69,10 @@ class GarageViewModel(app: Application) : AndroidViewModel(app) {
     val rpm: StateFlow<Int> = _rpm.asStateFlow()
 
     init {
-        val s = store.load()
+        val s = repo.state.value
         _ui.value = GarageUi(state = s, selected = fittedOf(s))
         host.setBuild(Garage.build(s))
+        viewModelScope.launch { repo.state.collect { saved -> _ui.update { it.copy(state = saved) } } }
         // The engine's situation is polled five times a second, only while the garage is on screen; unchanged
         // values publish nothing.
         viewModelScope.launch {
@@ -116,37 +118,37 @@ class GarageViewModel(app: Application) : AndroidViewModel(app) {
 
     fun unlock(id: String) {
         if (!host.parked) return
-        commit(Garage.unlock(_ui.value.state, id) ?: return)
+        commit { Garage.unlock(it, id) ?: it }
     }
 
     fun equip(id: String) {
         if (!host.parked) return
-        val next = Garage.equip(_ui.value.state, id) ?: return
+        if (Garage.equip(repo.state.value, id) == null) return
         _ui.update { it.copy(equipSeq = it.equipSeq + 1, equipCategory = Catalog.part(id)?.category) }
-        commit(next, toEngine = true)
+        commit(toEngine = true) { Garage.equip(it, id) ?: it }
     }
 
     fun setTune(t: Tune) {
         if (!host.parked) return
-        commit(Garage.tune(_ui.value.state, t), toEngine = true)
+        commit(toEngine = true) { Garage.tune(it, t) }
     }
 
     fun start() = host.start()
 
     fun stop() = host.stop()
 
-    fun demoAddPoints(points: Int = DEMO_POINTS) = commit(Garage.addPoints(_ui.value.state, points))
+    fun demoAddPoints(points: Int = DEMO_POINTS) = commit { Garage.addPoints(it, points) }
 
     /** The design's demo state, with the cards the PT walks through picked. */
     fun demoReset() {
         host.cancelAudition()
         _ui.update { it.copy(selected = DEMO_SELECTION, playing = null) }
-        commit(GarageState.DEMO, toEngine = true)
+        commit(toEngine = true) { GarageState.DEMO }
     }
 
-    private fun commit(s: GarageState, toEngine: Boolean = false) {
+    private fun commit(toEngine: Boolean = false, change: (GarageState) -> GarageState) {
+        val s = repo.update(change)
         _ui.update { it.copy(state = s) }
-        store.save(s)
         if (toEngine) host.setBuild(Garage.build(s))
     }
 
