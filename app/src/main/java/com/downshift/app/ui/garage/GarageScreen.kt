@@ -72,6 +72,7 @@ import com.downshift.app.core.garage.PartStatus
 import com.downshift.app.core.garage.SoundCharacter
 import com.downshift.app.ui.Clean
 import com.downshift.app.ui.Condensed
+import com.downshift.app.ui.DemoChip
 import com.downshift.app.ui.Dim
 import com.downshift.app.ui.Faint
 import com.downshift.app.ui.Gold
@@ -97,10 +98,11 @@ import java.util.Locale
 @Composable
 fun GarageScreen(vm: GarageViewModel = viewModel()) {
     val ui by vm.ui.collectAsStateWithLifecycle()
+    val demo by vm.demoOn.collectAsStateWithLifecycle()
     BoxWithConstraints(Modifier.fillMaxSize().background(Ground)) {
         val wide = maxWidth >= 1200.dp
         Column(Modifier.fillMaxSize()) {
-            Header(ui.state.balance, ui.parked, wide)
+            Header(ui.state.balance, ui.parked, wide, demo)
             if (wide) {
                 Row(Modifier.weight(1f).fillMaxWidth()) {
                     BuildColumn(ui, vm, Modifier.width(600.dp).fillMaxHeight())
@@ -116,8 +118,9 @@ fun GarageScreen(vm: GarageViewModel = viewModel()) {
     }
 }
 
+/** The title, the park chip, "시연" in demo mode, and the balance of the wallet in use. */
 @Composable
-private fun Header(balance: Int, parked: Boolean, wide: Boolean) {
+private fun Header(balance: Int, parked: Boolean, wide: Boolean, demo: Boolean) {
     Row(
         Modifier.fillMaxWidth().height(104.dp).bottomRule().padding(horizontal = if (wide) 48.dp else 32.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -135,9 +138,10 @@ private fun Header(balance: Int, parked: Boolean, wide: Boolean) {
                 }
                 Text(if (parked) "정차 중" else "주행 중", color = Muted, fontSize = 20.sp)
             }
+            if (demo) DemoChip()
         }
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("안전 주행 포인트", color = Faint, fontSize = 20.sp, modifier = Modifier.padding(bottom = 6.dp))
+            Text(if (demo) "시연 포인트" else "안전 주행 포인트", color = Faint, fontSize = 20.sp, modifier = Modifier.padding(bottom = 6.dp))
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(points(balance), color = Clean, fontFamily = Condensed, fontWeight = FontWeight.SemiBold, fontSize = 46.sp, lineHeight = 46.sp)
                 Text("P", color = Clean, fontFamily = Condensed, fontWeight = FontWeight.SemiBold, fontSize = 28.sp, modifier = Modifier.padding(start = 6.dp, bottom = 3.dp))

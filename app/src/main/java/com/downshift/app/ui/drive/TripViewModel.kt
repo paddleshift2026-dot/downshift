@@ -27,6 +27,9 @@ class TripViewModel(app: Application) : AndroidViewModel(app) {
 
     val live: StateFlow<DriveLive> = drive.live
     val summary: StateFlow<SummaryView?> = drive.summary
+    /** Demo mode (the summary header's "시연") and whether its dashed buttons are shown. */
+    val demoOn: StateFlow<Boolean> = (app as DownshiftApp).demo.on
+    val demoButtons: StateFlow<Boolean> = (app as DownshiftApp).demo.buttons
     val build: StateFlow<BuildLook> = garage.state.map(::look).stateIn(viewModelScope, SharingStarted.Eagerly, look(garage.state.value))
 
     fun setMuted(on: Boolean) = drive.setMuted(on)

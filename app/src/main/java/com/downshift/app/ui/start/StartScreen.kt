@@ -97,10 +97,11 @@ import kotlin.math.roundToInt
 @Composable
 fun StartScreen(vm: StartViewModel = viewModel()) {
     val ui by vm.ui.collectAsStateWithLifecycle()
+    val demo by vm.demoOn.collectAsStateWithLifecycle()
     BoxWithConstraints(Modifier.fillMaxSize().background(Ground)) {
         val wide = maxWidth >= 1200.dp
         Column(Modifier.fillMaxSize()) {
-            ScreenHeader("시동", wide, onBack = vm::back)
+            ScreenHeader("시동", wide, onBack = vm::back, demo = demo)
             if (wide) {
                 Row(
                     Modifier.weight(1f).fillMaxWidth().padding(horizontal = 48.dp, vertical = 24.dp),
@@ -200,6 +201,7 @@ private fun Controls(ui: StartUi, vm: StartViewModel) {
     var holding by remember { mutableStateOf(false) }
     var starting by remember { mutableStateOf(false) }
     val ignitions by vm.ignitions.collectAsStateWithLifecycle()
+    val demoButtons by vm.demoButtons.collectAsStateWithLifecycle()
     LaunchedEffect(ignitions) {
         if (ignitions == 0) return@LaunchedEffect
         starting = true
@@ -226,7 +228,7 @@ private fun Controls(ui: StartUi, vm: StartViewModel) {
             StartRing(enabled = ui.permitted && ui.ready, onHeld = vm::start, onPressed = { holding = it })
         }
         Row(Modifier.fillMaxWidth().height(84.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (ui.on) {
+            if (ui.on && demoButtons) {
                 DemoPedal(Modifier.weight(1f), vm::demoPedal)
                 Box(
                     Modifier.width(168.dp).height(84.dp).clip(RoundedCornerShape(18.dp)).dashedBorder(2.dp, Clean, 18.dp)

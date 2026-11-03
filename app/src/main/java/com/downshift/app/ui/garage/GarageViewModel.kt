@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.downshift.app.DownshiftApp
+import com.downshift.app.DriveLive
 import com.downshift.app.adapters.demo.DemoBus
 import com.downshift.app.adapters.demo.DemoCommand
 import com.downshift.app.core.garage.Catalog
@@ -138,6 +139,18 @@ class GarageViewModel(app: Application) : AndroidViewModel(app) {
         if (!host.parked) return
         commit(toEngine = true) { Garage.tune(it, t) }
     }
+
+    /** Demo mode, its dashed buttons, and the drive's lapse (in DriveLive), for the tune tab and the header. */
+    val demoOn: StateFlow<Boolean> = demo.on
+    val demoButtons: StateFlow<Boolean> = demo.buttons
+    val live: StateFlow<DriveLive> = drive.live
+
+    /** False, with nothing changed, while a trip is being recorded. */
+    fun setDemo(on: Boolean): Boolean = demo.setOn(on)
+
+    fun setDemoButtons(show: Boolean) = demo.setButtons(show)
+
+    fun setLapse(x: Int) = demo.setLapse(x)
 
     /** The start screen holds the ignition now; the garage only opens it. */
     fun openStart() = drive.openStart()

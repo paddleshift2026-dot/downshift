@@ -1,0 +1,13 @@
+demo mode screens, 2026-11-03 (debug build on the Pleos emulator)
+- ui_tune_demo_on_scrolled.png: tune tab with demo mode on: "시연 모드" switch, the demo section (buttons switch,
+  +1,000 P, demo state, lapse x1/x10/x20); header "시연" chip and "시연 포인트"; no dev row
+- ui_tune_demo_off.png: demo mode off: the real wallet ("안전 주행 포인트"), no demo section, the dev row (debug build)
+- ui_start_buttons.png / ui_start_no_buttons.png: the start screen's dashed buttons follow the buttons switch
+- drive screen (uiautomator, the screen itself is covered by the Pleos home, pleos_cover_idling.png):
+  buttons hidden + lapse 20 -> "시연 배속 ×20" only; buttons shown -> also "시연용 · 기어 P · 도착"
+- taps: x10 -> "주행 거리를 10배로 셉니다 · 주행계는 쓰지 않아요", x1 -> "실제 주행 거리로 셉니다";
+  buttons switch -> demo_buttons false/true; demo switch -> mode off/on
+- observation: since the evening the Pleos home covers the app in D at 0 km/h too (UX restrictions for idling
+  require DO; HOME_SCREEN TaskViewContainer(com.downshift.app) updateDrivingRestrictionRegion 1682 x 1210). The M3
+  build behaves the same now, while the M3 captures at 15:37 in the same boot showed the drive screen in D at rest.
+  Cause not found.

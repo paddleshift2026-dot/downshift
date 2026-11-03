@@ -72,12 +72,13 @@ import kotlin.math.roundToInt
 fun SummaryScreen(vm: TripViewModel = viewModel()) {
     val summary by vm.summary.collectAsStateWithLifecycle()
     val live by vm.live.collectAsStateWithLifecycle()
+    val demo by vm.demoOn.collectAsStateWithLifecycle()
     val v = summary
     BoxWithConstraints(Modifier.fillMaxSize().background(Ground)) {
         val wide = maxWidth >= 1200.dp
         val padX = if (wide) 48.dp else 40.dp
         Column(Modifier.fillMaxSize()) {
-            ScreenHeader("주행 결산", wide)
+            ScreenHeader("주행 결산", wide, demo = demo)
             if (v != null) {
                 if (wide) {
                     Row(

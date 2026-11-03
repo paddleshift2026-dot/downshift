@@ -88,6 +88,10 @@ class StartViewModel(app: Application) : AndroidViewModel(app) {
 
     fun demoDrive() = drive.demoGear(true)
 
+    /** Demo mode (the header's "시연") and whether its dashed buttons are shown. */
+    val demoOn: StateFlow<Boolean> = (app as DownshiftApp).demo.on
+    val demoButtons: StateFlow<Boolean> = (app as DownshiftApp).demo.buttons
+
     private fun poll() {
         val t = host.telemetry
         _rpm.value = if (t.running) (t.rpm / 10).roundToInt() * 10 else 0

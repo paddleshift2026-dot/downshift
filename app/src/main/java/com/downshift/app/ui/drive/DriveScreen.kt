@@ -63,12 +63,13 @@ import com.downshift.app.ui.garage.rememberAssetImage
  * The drive screen (design: Drive.dc.html, Drive2.dc.html; PRD feature D). The safe-driving ring with this trip's
  * points and the part it fills toward, the stopped engine render, why the engine sounds as it does, and a mute button
  * as wide as the screen. No rpm, speed or gear, no animation: values swap when they change. Text is 30 sp and up,
- * except the dashed demo button.
+ * except the dashed demo elements (demo mode only).
  */
 @Composable
 fun DriveScreen(vm: TripViewModel = viewModel()) {
     val live by vm.live.collectAsStateWithLifecycle()
     val build by vm.build.collectAsStateWithLifecycle()
+    val demoButtons by vm.demoButtons.collectAsStateWithLifecycle()
     BoxWithConstraints(Modifier.fillMaxSize().background(Ground)) {
         if (maxWidth >= 1200.dp) {
             Row(Modifier.fillMaxSize()) {
@@ -86,7 +87,7 @@ fun DriveScreen(vm: TripViewModel = viewModel()) {
                     Box(Modifier.alpha(if (live.muted) 0.5f else 1f)) { Plate(build.plate, 40) }
                     Chip(live.situation, wide = true)
                     MuteButton(live.muted, wide = true) { vm.setMuted(!live.muted) }
-                    DemoArrive(live.lapse, wide = true, onClick = vm::arrive)
+                    DemoRow(live.lapse, demoButtons, wide = true, onArrive = vm::arrive)
                 }
             }
         } else {
@@ -99,7 +100,7 @@ fun DriveScreen(vm: TripViewModel = viewModel()) {
                 Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) { Dial(live, build, 560.dp) }
                 Chip(live.situation, wide = false)
                 MuteButton(live.muted, wide = false) { vm.setMuted(!live.muted) }
-                DemoArrive(live.lapse, wide = false, onClick = vm::arrive)
+                DemoRow(live.lapse, demoButtons, wide = false, onArrive = vm::arrive)
             }
         }
     }
@@ -171,21 +172,27 @@ private fun MuteButton(muted: Boolean, wide: Boolean, onToggle: () -> Unit) {
     }
 }
 
-/** Demo only: stop and shift into park, as arriving would; above it, the demo's distance lapse when it is on. */
+/**
+ * Demo mode only: the distance lapse whenever it is on (also with the buttons hidden, so a recording never hides it),
+ * and the button that stops and shifts into park, as arriving would.
+ */
 @Composable
-private fun DemoArrive(lapse: Int, wide: Boolean, onClick: () -> Unit) {
+private fun DemoRow(lapse: Int, buttons: Boolean, wide: Boolean, onArrive: () -> Unit) {
+    if (lapse <= 1 && !buttons) return
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (lapse > 1) {
             Box(Modifier.fillMaxWidth().height(48.dp).dashedBorder(2.dp, Slate, 14.dp), contentAlignment = Alignment.Center) {
                 Text("시연 배속 ×$lapse", color = Muted, fontSize = 24.sp)
             }
         }
-        Box(
-            Modifier.fillMaxWidth().height(if (wide) 72.dp else 64.dp).clip(RoundedCornerShape(18.dp)).dashedBorder(2.dp, Slate, 18.dp)
-                .clickable(role = Role.Button, onClick = onClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("시연용 · 기어 P · 도착", color = Muted, fontSize = if (wide) 24.sp else 22.sp, fontWeight = FontWeight.Medium)
+        if (buttons) {
+            Box(
+                Modifier.fillMaxWidth().height(if (wide) 72.dp else 64.dp).clip(RoundedCornerShape(18.dp)).dashedBorder(2.dp, Slate, 18.dp)
+                    .clickable(role = Role.Button, onClick = onArrive),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("시연용 · 기어 P · 도착", color = Muted, fontSize = if (wide) 24.sp else 22.sp, fontWeight = FontWeight.Medium)
+            }
         }
     }
 }

@@ -29,10 +29,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import com.downshift.app.ui.garage.dashedBorder
 
-/** The start and summary screens' header: an optional back button, the title and the "P 정차 중" chip. */
+/** The start and summary screens' header: an optional back button, the title, the "P 정차 중" chip, and "시연" in demo mode. */
 @Composable
-internal fun ScreenHeader(title: String, wide: Boolean, onBack: (() -> Unit)? = null) {
+internal fun ScreenHeader(title: String, wide: Boolean, onBack: (() -> Unit)? = null, demo: Boolean = false) {
     Row(
         Modifier.fillMaxWidth().height(104.dp)
             .drawBehind { drawRect(Rule, Offset(0f, size.height - 1.dp.toPx()), Size(size.width, 1.dp.toPx())) }
@@ -52,6 +53,15 @@ internal fun ScreenHeader(title: String, wide: Boolean, onBack: (() -> Unit)? = 
         }
         Text(title, color = Ink, fontSize = 40.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.01).em)
         ParkChip()
+        if (demo) DemoChip()
+    }
+}
+
+/** Demo mode is on: the points on screen are the demo wallet's (PRD feature G), and the screen says so. */
+@Composable
+internal fun DemoChip() {
+    Box(Modifier.height(40.dp).dashedBorder(2.dp, Slate, 20.dp).padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
+        Text("시연", color = Muted, fontSize = 20.sp, fontWeight = FontWeight.Medium)
     }
 }
 
