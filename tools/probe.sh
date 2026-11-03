@@ -42,6 +42,8 @@ case "$cmd" in
       if "$ADB" shell pm grant --user 10 "$PKG" "android.car.permission.$p" >/dev/null 2>&1 \
         || "$ADB" shell pm grant "$PKG" "android.car.permission.$p" >/dev/null 2>&1; then echo "granted $p"; else echo "not grantable: $p"; fi
     done
+    # DriveService's notification (M4)
+    if "$ADB" shell pm grant --user 10 "$PKG" android.permission.POST_NOTIFICATIONS >/dev/null 2>&1; then echo "granted POST_NOTIFICATIONS"; else echo "not grantable: POST_NOTIFICATIONS"; fi
     "$ADB" shell am force-stop "$PKG"; show; echo "app restarted"
     ;;
   console)

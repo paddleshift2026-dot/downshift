@@ -20,6 +20,10 @@
     <uses-permission android:name="android.car.permission.CONTROL_CAR_SEATS" />
     <!-- Emulator demo only: the Virtual Console serves the accelerator pedal on 127.0.0.1:8088 inside the emulator -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- DriveService: the engine and the trip keep going while another app has the screen (Android 14 freezes cached apps) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature android:name="android.hardware.type.automotive" android:required="true" />
 
@@ -48,5 +52,9 @@
             android:name=".adapters.demo.DemoReceiver"
             android:exported="true"
             android:permission="android.permission.DUMP" />
+        <service
+            android:name=".DriveService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
     </application>
 </manifest>

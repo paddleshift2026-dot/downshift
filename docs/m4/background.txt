@@ -1,0 +1,13 @@
+the app behind the navigation app, 2026-11-03 19:25: engine idling, demo mode, pid 25085 uid 1010177
+front: topResumedActivity=ActivityRecord{ca42fdb u10 ai.umos.maps.android.navigation.app/.MainActivity t1000072}
++0s: engine thread TIME+ 0:00.64 | curProcState=4 isFrozen=false 
++15s: engine thread TIME+ 0:01.33 | curProcState=4 isFrozen=false 
++30s: engine thread TIME+ 0:02.00 | curProcState=4 isFrozen=false 
++45s: engine thread TIME+ 0:02.68 | curProcState=4 isFrozen=false 
++60s: engine thread TIME+ 0:03.33 | curProcState=4 isFrozen=false 
++75s: engine thread TIME+ 0:04.00 | curProcState=4 isFrozen=false 
++90s: engine thread TIME+ 0:04.65 | curProcState=4 isFrozen=false 
+players:  1 state:started 
+a trip started behind the navigation: 1
+and was settled: 1
+pid after: 25085 (same = not killed)

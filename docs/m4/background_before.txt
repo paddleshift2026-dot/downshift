@@ -1,0 +1,9 @@
+the app behind the navigation app BEFORE DriveService, 2026-11-03 19:21: engine idling, demo mode, pid 31245
+front: topResumedActivity=ActivityRecord{... ai.umos.maps.android.navigation.app/.MainActivity ...}
++0s: engine thread TIME+ 0:10.34 | curProcState=15 isFrozen=false
++15s: engine thread TIME+ 0:10.64 | curProcState=15 isFrozen=true
++30s .. +90s: engine thread TIME+ 0:10.64 | curProcState=15 isFrozen=true   (the engine stopped: frozen cached app)
+players: 1 state:started (the AudioTrack still "started", but its thread is frozen)
+a trip started behind the navigation: 0 (the drive thread is frozen too)
+pid after: 31245 (frozen, not killed)
+-> DriveService (media playback foreground service while the engine runs or a trip is on): see background.txt

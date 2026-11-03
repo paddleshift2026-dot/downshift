@@ -92,6 +92,8 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
     private var lastTickNs = 0L
     private var pleosOn = false
     private var unneededSinceMs = 0L
+    private var serviceOn = false
+    private var notNeededSinceMs = 0L
 
     private val _screen = MutableStateFlow(flow.screen)
     val screen: StateFlow<Screen> = _screen.asStateFlow()
@@ -216,6 +218,7 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
         engine.setSituationGain(s.gain)
         publish(s)
         vehicleSignals(running || trip != null, now)
+        keepAlive(running || trip != null, now)
         return running || trip != null || (gear != GearState.PARK && gear != GearState.UNKNOWN)
     }
 
@@ -278,6 +281,28 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
         }
         val next = DriveLive(gauge, s, muted, lapse)
         if (next != prev) _live.value = next
+    }
+
+    /**
+     * DriveService while the engine runs or a trip is on, so neither stops when another app has the screen; down
+     * KEEP_LINGER_MS after neither is. A refused start (from the background) is logged by DriveService and tried again
+     * the next time the engine or a trip starts.
+     */
+    private fun keepAlive(needed: Boolean, now: Long) {
+        if (needed) {
+            notNeededSinceMs = 0L
+            if (!serviceOn) {
+                serviceOn = true
+                main.post { DriveService.start(app) }
+            }
+            return
+        }
+        if (!serviceOn) return
+        if (notNeededSinceMs == 0L) notNeededSinceMs = now
+        if (now - notNeededSinceMs >= KEEP_LINGER_MS) {
+            serviceOn = false
+            main.post { DriveService.stop(app) }
+        }
     }
 
     /** The Pleos Vehicle SDK on while the engine or a trip needs it; off PLEOS_LINGER_MS after neither does. */
@@ -348,6 +373,7 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
         const val CHECKPOINT_MS = 10_000L
         const val GEAR_WAIT_MS = 3_000L
         const val PLEOS_LINGER_MS = 5_000L
+        const val KEEP_LINGER_MS = 5_000L
         const val DEMO_PEDAL_PCT = 85
     }
 }

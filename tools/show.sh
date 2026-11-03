@@ -5,6 +5,7 @@
 #   bash tools/show.sh wallet     # the demo wallet apart from the real one, demo-only injections -> docs/m4/wallet.txt
 #   bash tools/show.sh latency    # web pedal message -> sound, the way sound.sh latency does it -> docs/m4/latency.txt
 #   bash tools/show.sh cpu        # %CPU (one core = 100) with demo mode and the web pedal -> docs/m4/cpu.txt
+#   bash tools/show.sh background # the engine and the trip behind the navigation app -> docs/m4/background.txt
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OUT="$HERE/../docs/m4"
@@ -122,10 +123,45 @@ cpu() {
   } | tee "$OUT/cpu.txt"
 }
 
+# The engine thread's total CPU time (TIME+) and the process's state; a frozen or stopped engine stops counting.
+engine_time() { "$ADB" shell "top -H -b -n 1 -p $1" < /dev/null | tr -d '\r' | awk '/DownshiftEngine/ { print $11; exit }'; }
+proc_state() {
+  "$ADB" shell dumpsys activity processes "$PKG" < /dev/null | tr -d '\r' \
+    | grep -o -E 'procState=[A-Z_]+|curProcState=[0-9]+|isFrozen=[a-z]+|mFrozen=[a-z]+|frozen=[a-z]+' | sort -u | tr '\n' ' '
+}
+
+background() {
+  echo "the app behind the navigation -> docs/m4/background.txt"
+  start_clean
+  drive screen --es to start; sleep 2; app --es cmd start; sleep 3
+  local p uid s
+  p="$(pid)"
+  uid="$("$ADB" shell pm list packages -U --user 10 "$PKG" < /dev/null | tr -d '\r' | grep -o 'uid:[0-9]*' | cut -d: -f2)"
+  {
+    echo "the app behind the navigation app, $(date '+%Y-%m-%d %H:%M'): engine idling, demo mode, pid $p uid $uid"
+    drive route --es value cancel; sleep 3 # cancelling a route brings the navigation app forward
+    echo "front: $("$ADB" shell dumpsys activity activities < /dev/null | tr -d '\r' | grep -m1 'topResumedActivity' | sed 's/^ *//' | cut -c1-140)"
+    for s in 0 15 30 45 60 75 90; do
+      [ "$s" -gt 0 ] && sleep 15
+      echo "+${s}s: engine thread TIME+ $(engine_time "$p") | $(proc_state)"
+    done
+    echo "players: $("$ADB" shell dumpsys audio < /dev/null | tr -d '\r' | grep "AudioPlaybackConfiguration" | grep "u/pid:$uid" | grep -o 'state:[a-z]*' | sort | uniq -c | tr -s ' ' | tr '\n' ' ')"
+    "$ADB" logcat -c
+    post "/vehicle/gear?gear=Drive"; sleep 3
+    echo "a trip started behind the navigation: $(log | grep -c 'trip start')"
+    post "/vehicle/gear?gear=Park"; sleep 2
+    echo "and was settled: $(log | grep -c 'trip done')"
+    echo "pid after: $(pid) (same = not killed)"
+  } | tee "$OUT/background.txt"
+  "$ADB" shell am start -n "$PKG/.MainActivity" < /dev/null > /dev/null 2>&1
+  app --es cmd stop
+}
+
 cmd="${1:-}"
 case "$cmd" in
   wallet) wallet ;;
   latency) latency ;;
   cpu) cpu ;;
-  *) echo "usage: show.sh wallet|latency|cpu"; exit 1 ;;
+  background) background ;;
+  *) echo "usage: show.sh wallet|latency|cpu|background"; exit 1 ;;
 esac
