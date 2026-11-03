@@ -27,6 +27,18 @@ data class VehicleSignals(
     val fuel: FuelKind = FuelKind.UNKNOWN,
 )
 
+/**
+ * The car's driving restrictions as AAOS CarUxRestrictions reports them: whether apps must be distraction optimised
+ * (DO) and the active CarUxRestrictions.UX_RESTRICTIONS_* flags. The Pleos emulator asks for DO in every gear but P,
+ * standing still included (0x50: no video, no setup).
+ */
+data class UxState(val requiresDo: Boolean, val active: Int = 0) {
+    companion object {
+        /** Before the car service answers, or without one: no restrictions, so the gear alone decides. */
+        val NONE = UxState(requiresDo = false)
+    }
+}
+
 enum class FuelKind {
     EV, HYBRID, ICE, UNKNOWN;
 

@@ -15,6 +15,7 @@
 #   bash tools/show.sh soak [MIN] # MIN minutes (30) of drive cycles with V12 running: restarts, CPU, PSS -> docs/m4/soak.txt
 #   bash tools/show.sh coldstart  # five cold starts (am start -W) -> docs/m4/coldstart.txt
 #   bash tools/show.sh release    # the release APK: contents, install, demo mode, adb, then the debug build back
+#   bash tools/show.sh ux         # the driving restrictions: neutral stops a preview and locks the garage -> docs/m4/ux.txt
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OUT="$HERE/../docs/m4"
@@ -27,6 +28,7 @@ check() { if [ "$2" = "$3" ]; then echo "PASS $1 ($2)"; else echo "FAIL $1 (got 
 field() { balances | grep -o "$1=[a-z0-9]*" | cut -d= -f2; }
 seen() { if "$ADB" logcat -d -s DownshiftLab DownshiftDemo < /dev/null | tr -d '\r' | grep -q "$1"; then echo yes; else echo no; fi; }
 more() { if [ "${1:-0}" -gt "${2:-0}" ]; then echo yes; else echo no; fi; }
+onscreen() { if [ -n "$(ui_node "$1")" ]; then echo yes; else echo no; fi; }
 
 wallet() {
   echo "demo wallet checks -> docs/m4/wallet.txt"
@@ -412,11 +414,40 @@ release() {
   (cd "$HERE/.." && ./gradlew --offline installDebug -q) && echo "  debug build back on the emulator"
 }
 
+# The driving restrictions (CarUxRestrictions): Pleos asks for DO in neutral at a standstill, so a garage preview stops
+# early and the lock view stands in for the garage; park opens it again; drive shows the drive screen as before.
+ux() {
+  echo "driving restrictions -> docs/m4/ux.txt"
+  start_clean
+  drive screen --es to garage; sleep 2
+  "$ADB" logcat -c
+  local over lock="주행 중에는 쓸 수 없어요"
+  {
+    echo "driving restrictions (CarUxRestrictions), $(date '+%Y-%m-%d %H:%M')"
+    garage preview --es part v8; sleep 1.5
+    check "1 a V8 preview plays in park" "$(seen 'preview ENGINE')" yes
+    post "/vehicle/gear?gear=Neutral"; sleep 2.5
+    check "2 neutral at a standstill asks for DO (no video, no setup)" "$(seen 'ux DO=true active=0x50')" yes
+    over="$(log | grep -o 'preview over at [0-9.]* of [0-9.]*' | tail -1)"
+    check "2 ... the preview stops before its end ($over)" "$(echo "$over" | awk '{ print ($4 < $6) ? "yes" : "no" }')" yes
+    check "2 ... the lock view stands in for the garage" "$(onscreen "$lock")" yes
+    post "/vehicle/gear?gear=Park"; sleep 2.5
+    check "3 park asks for no DO" "$(seen 'ux DO=false')" yes
+    check "3 ... the garage is back" "$(onscreen "$lock")" no
+    post "/vehicle/gear?gear=Drive"; sleep 2.5
+    check "4 drive opens the drive screen" "$(onscreen '음소거')" yes
+    check "4 ... not the lock view" "$(onscreen "$lock")" no
+    stop_car; post "/vehicle/gear?gear=Park"; sleep 2.5
+    check "5 back in park, no lock view" "$(onscreen "$lock")" no
+  } | tee "$OUT/ux.txt"
+}
+
 cmd="${1:-}"
 case "$cmd" in
   soak) soak "${2:-30}" ;;
   coldstart) coldstart ;;
   release) release ;;
+  ux) ux ;;
   wallet) wallet ;;
   latency) latency ;;
   cpu) cpu ;;
@@ -425,5 +456,5 @@ case "$cmd" in
   video) video ;;
   shots) shots ;;
   volume) volume "${2:?index 0..45}"; echo "car volume $(volume_index) / 45" ;;
-  *) echo "usage: show.sh wallet|latency|cpu|background|pt|video|shots|volume N|soak [MIN]|coldstart|release"; exit 1 ;;
+  *) echo "usage: show.sh wallet|latency|cpu|background|pt|video|shots|volume N|soak [MIN]|coldstart|release|ux"; exit 1 ;;
 esac

@@ -40,14 +40,16 @@ internal fun BrandMark(height: Dp, modifier: Modifier = Modifier) {
 /**
  * The team wordmark on black at a cold start (timing and rules in [Intro]). It lies over the app, so the screen the
  * flow picks is already composed underneath and shows through as the cover fades. A tap skips it, and it gives way at
- * once to the drive screen. The opacities are read while drawing, so the fade does not recompose.
+ * once to the drive screen and the lock view. The opacities are read while drawing, so the fade does not recompose.
  */
 @Composable
 internal fun BrandIntro(onDone: () -> Unit) {
-    val screen = (LocalContext.current.applicationContext as DownshiftApp).drive.screen.collectAsStateWithLifecycle()
+    val app = LocalContext.current.applicationContext as DownshiftApp
+    val screen = app.drive.screen.collectAsStateWithLifecycle()
+    val ux = app.host.ux.collectAsStateWithLifecycle()
     var elapsed by remember { mutableLongStateOf(0L) }
     var skipped by remember { mutableStateOf(false) }
-    val visible by remember { derivedStateOf { Intro.visible(elapsed, screen.value, skipped) } }
+    val visible by remember { derivedStateOf { Intro.visible(elapsed, screen.value, skipped, ux.value) } }
     LaunchedEffect(Unit) {
         val start = withFrameMillis { it }
         while (elapsed < Intro.TOTAL_MS) elapsed = withFrameMillis { it } - start

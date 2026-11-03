@@ -17,6 +17,7 @@ import com.downshift.app.core.build.Build
 import com.downshift.app.core.build.EngineId
 import com.downshift.app.core.engine.EngineSpec
 import com.downshift.app.core.engine.Engines
+import com.downshift.app.core.flow.UxGate
 import com.downshift.app.core.garage.Audition
 import com.downshift.app.core.garage.Category
 import com.downshift.app.core.input.InputArbiter
@@ -24,6 +25,7 @@ import com.downshift.app.core.input.ThrottleSource
 import com.downshift.app.core.model.DriveInputs
 import com.downshift.app.core.model.FuelKind
 import com.downshift.app.core.model.GearState
+import com.downshift.app.core.model.UxState
 import com.downshift.app.core.pack.LoadedPack
 import com.downshift.app.core.pack.ProceduralPack
 import com.downshift.app.core.powertrain.LoadEstimator
@@ -32,9 +34,13 @@ import com.downshift.app.core.runtime.Telemetry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -54,7 +60,11 @@ class EngineHost(private val app: Application) {
     @Volatile private var estimate = 0.0
     @Volatile private var lastSpeedNs = 0L
     @Volatile private var lastPedalAtMs = 0L
-    private val car = CarSignalsAdapter(app) { mps, atNs -> onSpeed(mps, atNs) }
+    private val car = CarSignalsAdapter(app, onUx = ::onUx) { mps, atNs -> onSpeed(mps, atNs) }
+    private val _ux = MutableStateFlow(UxState.NONE)
+
+    /** The car's driving restrictions (CarUxRestrictions): under DO the parked-only screens give way to the lock view. */
+    val ux: StateFlow<UxState> = _ux.asStateFlow()
     // A preview plays its own script, so the pedals only need fast polling while the engine runs outside one.
     private val console = ConsoleDrive(gear = { car.gear }, fast = { telemetry.running && preview == null }) { p ->
         arbiter.console(p.throttle, p.brake, p.atMs)
@@ -91,11 +101,16 @@ class EngineHost(private val app: Application) {
     val audioInfo: String get() = output?.bufferInfo ?: ""
     val latency: LatencyStats? get() = output?.latency
 
-    /** In park, neutral or an unknown gear and below 1 km/h (the demo's own speed included): the garage may change things. */
+    /**
+     * In park, neutral or an unknown gear below 1 km/h (the demo's own speed included), and the car asks for no DO
+     * (UxGate; Pleos does in neutral at a standstill): the garage may change things and play previews. A preview that
+     * is playing ends as soon as this turns false.
+     */
     val parked: Boolean
         get() {
             val g = car.gear
-            return (g == GearState.PARK || g == GearState.NEUTRAL || g == GearState.UNKNOWN) && roadSpeedMps() < PARKED_MPS
+            val still = (g == GearState.PARK || g == GearState.NEUTRAL || g == GearState.UNKNOWN) && roadSpeedMps() < PARKED_MPS
+            return UxGate.parked(still, car.ux)
         }
 
     /** The selector as AAOS last reported it. */
@@ -209,6 +224,7 @@ class EngineHost(private val app: Application) {
 
     private fun finish(p: Preview) {
         if (preview !== p) return
+        Log.i(tag, "preview over at %.1f of %.1f s".format(Locale.ROOT, p.t, p.script.durationSec))
         preview = null
         restore()
         p.onDone()
@@ -253,6 +269,12 @@ class EngineHost(private val app: Application) {
     // In the demo the app computes the speed itself (50 Hz, continuous); the AAOS copy comes back in whole km/h
     // about ten times a second, so it only drives the cluster. On a real car AAOS is the only source.
     private fun roadSpeedMps() = if (console.connected && console.demoPhysics) console.demoSpeedMps else car.speedMps
+
+    /** On the car thread, and once on the main thread while the car signals start. */
+    private fun onUx(u: UxState) {
+        _ux.value = u
+        Log.i(tag, "ux DO=${u.requiresDo} active=0x${u.active.toString(16)}")
+    }
 
     private fun onSpeed(mps: Double, atNs: Long) {
         val prev = lastSpeedNs

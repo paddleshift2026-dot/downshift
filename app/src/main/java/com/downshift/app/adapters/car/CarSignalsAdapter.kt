@@ -4,6 +4,8 @@ import ai.pleos.playground.vehicle.Vehicle
 import ai.pleos.playground.vehicle.listener.BrakePedalStatusListener
 import android.car.Car
 import android.car.VehiclePropertyIds
+import android.car.drivingstate.CarUxRestrictions
+import android.car.drivingstate.CarUxRestrictionsManager
 import android.car.hardware.CarPropertyValue
 import android.car.hardware.property.CarPropertyManager
 import android.content.Context
@@ -12,12 +14,14 @@ import android.os.HandlerThread
 import android.util.Log
 import com.downshift.app.core.model.FuelKind
 import com.downshift.app.core.model.GearState
+import com.downshift.app.core.model.UxState
 import com.downshift.app.core.model.VehicleSignals
 
 /**
- * The car signals the engine needs: AAOS speed, gear selector and fuel type, and optionally the Pleos brake pedal.
- * Callbacks run on a HandlerThread so the UI thread stays free. Every speed sample also goes to onSpeedSample
- * (m/s, event time in elapsed-realtime nanoseconds) for the load estimate.
+ * The car signals the engine needs: AAOS speed, gear selector and fuel type, the driving restrictions
+ * (CarUxRestrictions), and optionally the Pleos brake pedal. Callbacks run on a HandlerThread so the UI thread stays
+ * free. Every speed sample also goes to onSpeedSample (m/s, event time in elapsed-realtime nanoseconds) for the load
+ * estimate; every change of the restrictions goes to onUx, the first one while start() runs.
  *
  * The Pleos brake is off by default: once initialised, the Pleos Vehicle SDK kept about 7% of a core busy on the
  * main thread of the emulator (M1 measurement), and the engine sound does not use the brake (demos take it from
@@ -26,6 +30,7 @@ import com.downshift.app.core.model.VehicleSignals
 class CarSignalsAdapter(
     context: Context,
     private val usePleosBrake: Boolean = false,
+    private val onUx: (UxState) -> Unit = {},
     private val onSpeedSample: (Double, Long) -> Unit = { _, _ -> },
 ) {
     private val tag = "DownshiftCar"
@@ -33,6 +38,7 @@ class CarSignalsAdapter(
     private val thread = HandlerThread("DownshiftCar")
     private var car: Car? = null
     private var properties: CarPropertyManager? = null
+    private var restrictions: CarUxRestrictionsManager? = null
     private val callbacks = mutableListOf<CarPropertyManager.CarPropertyEventCallback>()
     private val vehicle by lazy { Vehicle(appContext) }
     private var vehicleUp = false
@@ -44,6 +50,8 @@ class CarSignalsAdapter(
     @Volatile var brakePressed = false
         private set
     @Volatile var fuel = FuelKind.UNKNOWN
+        private set
+    @Volatile var ux = UxState.NONE
         private set
 
     val signals: VehicleSignals get() = VehicleSignals(speedMps, gear, brakePressed, fuel)
@@ -77,6 +85,12 @@ class CarSignalsAdapter(
                     gear = GearState.fromAaos((v.value as? Number)?.toInt() ?: 0)
                 }
             }
+            val um = c.getCarManager(Car.CAR_UX_RESTRICTION_SERVICE) as? CarUxRestrictionsManager
+            restrictions = um
+            if (um != null) guard("ux restrictions") {
+                um.registerListener { r -> onRestrictions(r) }
+                um.currentCarUxRestrictions?.let { onRestrictions(it) }
+            }
         }
         if (usePleosBrake) {
             try {
@@ -93,6 +107,8 @@ class CarSignalsAdapter(
     fun stop() {
         callbacks.forEach { cb -> runCatching { properties?.unregisterCallback(cb) } }
         callbacks.clear()
+        runCatching { restrictions?.unregisterListener() }
+        restrictions = null
         runCatching { car?.disconnect() }
         car = null
         if (vehicleUp) guard("unregister") {
@@ -115,6 +131,13 @@ class CarSignalsAdapter(
             pm.registerCallback(cb, id, rate)
             callbacks += cb
         }
+    }
+
+    private fun onRestrictions(r: CarUxRestrictions) {
+        val next = UxState(r.isRequiresDistractionOptimization, r.activeRestrictions)
+        if (next == ux) return
+        ux = next
+        onUx(next)
     }
 
     private fun intsOf(value: Any?): IntArray? = when (value) {

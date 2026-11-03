@@ -1,5 +1,6 @@
 package com.downshift.app.core.flow
 
+import com.downshift.app.core.model.UxState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -22,6 +23,13 @@ class IntroTest {
     @Test
     fun aTapSkipsIt() {
         assertFalse(Intro.visible(elapsedMs = 200, screen = Screen.GARAGE, skipped = true))
+    }
+
+    @Test
+    fun aCarThatAsksForDoGetsTheLockViewInstead() {
+        // A cold start in neutral at a standstill: no animated wordmark over the lock view.
+        assertFalse(Intro.visible(elapsedMs = 0, screen = Screen.GARAGE, skipped = false, ux = UxState(requiresDo = true, active = 0x50)))
+        assertTrue(Intro.visible(elapsedMs = 0, screen = Screen.GARAGE, skipped = false, ux = UxState.NONE))
     }
 
     @Test

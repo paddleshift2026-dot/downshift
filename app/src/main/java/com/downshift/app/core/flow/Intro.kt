@@ -1,9 +1,12 @@
 package com.downshift.app.core.flow
 
+import com.downshift.app.core.model.UxState
+
 /**
  * The team wordmark on black each time the app starts cold, before the screen the flow picks (the safety note on the
- * first run, the garage after that). It never covers the drive screen: a start in gear D, or a trip that begins while
- * it is up, goes straight to driving. A tap skips it. The wordmark fades in and holds, then the cover fades out.
+ * first run, the garage after that). It never covers the drive screen or the lock view: a start in gear D, or a trip
+ * that begins while it is up, goes straight to driving, and a car that asks for DO gets the lock view at once. A tap
+ * skips it. The wordmark fades in and holds, then the cover fades out.
  */
 object Intro {
     const val FADE_IN_MS = 400L
@@ -11,8 +14,8 @@ object Intro {
     const val FADE_OUT_MS = 300L
     const val TOTAL_MS = FADE_IN_MS + HOLD_MS + FADE_OUT_MS
 
-    fun visible(elapsedMs: Long, screen: Screen, skipped: Boolean): Boolean =
-        !skipped && screen != Screen.DRIVE && elapsedMs < TOTAL_MS
+    fun visible(elapsedMs: Long, screen: Screen, skipped: Boolean, ux: UxState = UxState.NONE): Boolean =
+        !skipped && screen != Screen.DRIVE && !ux.requiresDo && elapsedMs < TOTAL_MS
 
     fun markAlpha(elapsedMs: Long): Float = (elapsedMs.toFloat() / FADE_IN_MS).coerceIn(0f, 1f)
 
