@@ -68,6 +68,9 @@ class TripMeter(private val start: TripTotals = TripTotals()) {
 
     fun odometer(km: Double) = distance.odometer(km)
 
+    /** The demo's distance lapse: the speed integral (multiplied) is the distance from here on. */
+    fun ignoreOdometer() = distance.ignoreOdometer()
+
     fun turn(t: TurnAhead) = turnJudge.announce(t)
 
     fun place(p: PlaceAhead) = places.announce(p)

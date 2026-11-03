@@ -207,7 +207,10 @@ class DriveHost(private val app: Application, private val engine: EngineHost, pr
                 is DriveEvent.Place -> trip?.meter?.place(e.place)
                 is DriveEvent.Odometer -> if (lapse == 1) trip?.meter?.odometer(e.km)
                 is DriveEvent.Quiet -> quiet = e.on
-                is DriveEvent.Lapse -> lapse = e.factor.coerceIn(1, MAX_LAPSE)
+                is DriveEvent.Lapse -> {
+                    lapse = e.factor.coerceIn(1, MAX_LAPSE)
+                    if (lapse > 1) trip?.meter?.ignoreOdometer()
+                }
             }
         }
     }

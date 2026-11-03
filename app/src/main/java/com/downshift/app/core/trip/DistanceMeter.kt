@@ -17,6 +17,7 @@ class DistanceMeter {
     private var keptIntegral = 0.0
     private var unknownIntegral = 0.0
     private var lastOdometer: Double? = null
+    private var ignoring = false
 
     /** limitKph 0: the navigation gave no limit here. */
     fun step(speedMps: Double, limitKph: Int, dtSec: Double) {
@@ -30,8 +31,16 @@ class DistanceMeter {
         }
     }
 
+    /** From now on the speed integral is the distance and odometer readings are dropped (the demo's distance lapse). */
+    fun ignoreOdometer() {
+        ignoring = true
+        odometerKm = 0.0
+        lastOdometer = null
+    }
+
     /** A cumulative odometer reading in km. A step backwards or a jump of more than MAX_JUMP_KM counts on from there. */
     fun odometer(km: Double) {
+        if (ignoring) return
         val last = lastOdometer
         lastOdometer = km
         if (last == null) return

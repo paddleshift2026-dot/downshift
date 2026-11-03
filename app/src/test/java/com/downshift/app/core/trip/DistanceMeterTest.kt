@@ -53,6 +53,18 @@ class DistanceMeterTest {
     }
 
     @Test
+    fun aTripThatIgnoresTheOdometerCountsTheIntegral() {
+        val m = DistanceMeter()
+        m.odometer(1000.0)
+        m.drive(10.0, 0, 50.0)
+        m.odometer(1000.5)
+        m.ignoreOdometer() // a demo lapse multiplies the integral, which the odometer cannot follow
+        m.drive(10.0, 0, 50.0)
+        m.odometer(1000.9)
+        assertEquals(1.0, m.totalKm, 1e-6)
+    }
+
+    @Test
     fun odometerJumpsAndRollbacksAreIgnored() {
         val m = DistanceMeter()
         m.odometer(1000.0)
