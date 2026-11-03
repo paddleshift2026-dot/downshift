@@ -1,5 +1,5 @@
-scripted trip, 2026-11-03 15:41: limit 50; 40 km/h with a signalled left turn, an unsignalled right turn,
+scripted trip, 2026-11-03 23:52: limit 50; 40 km/h with a signalled left turn, an unsignalled right turn,
 a 50 km/h camera at 40; a school zone at 25. Expected turns=1/2, places=2/2, unknown=0.00, all distance kept.
-trip done: km=0.80 known=0.80 kept=0.80 unknown=0.00 places=2/2 turns=1/2 points=4+1+12+1=18 balance=3018 lapse=1
-console odometer: 2.800000 -> 3.600000
+trip done: km=0.80 known=0.80 kept=0.80 unknown=0.00 places=2/2 turns=1/2 points=4+1+12+1=18 balance=3018 lapse=1 demo=true
+console odometer: 22.799999 -> 23.600000
 result: as expected

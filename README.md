@@ -52,13 +52,13 @@ bash tools/show.sh video     # 같은 흐름을 소리와 함께 녹화 -> docs/
 | 제한속도·카메라·주의구간·회전 안내 | Pleos NaviHelper 3.0.5 `onCurrentRoadSpeedLimit`, `onCameraAlert`, `onCautionPointInfo`, `onTBTInfo` | 포인트, 스쿨존 조용 모드 | 회전 안내만 옴 → 나머지는 시연 모드에서 주입 |
 | 안내 음성·통화 | AudioManager `registerAudioPlaybackCallback` | 엔진음 자동 감소 | 확인 |
 | 가속 페달 | SDK에 없음 → 시연은 Virtual Console(`/vehicle/controls`) | 엔진 부하·레브 | 콘솔 → 소리 중앙값 77ms |
-| 주행 규제 | `distractionOptimized` 선언, CarUxRestrictions | 주행 화면 단순화 | 주행 중에는 Pleos 홈이 앱 화면을 가림(소리·기록은 이어짐) |
+| 주행 규제 | `distractionOptimized` 선언, `CarUxRestrictionsManager`(DO 필요 여부·제한 플래그) | DO가 필요하면 개러지·시동·결산·안전 안내 대신 잠금 화면, 미리 듣기 중단, 시작 로고 생략. 주행 화면은 DO 규칙(글자 30sp 이상, rpm·속도·애니메이션 없음) | N 정차에서 DO(0x50)가 오면 미리 듣기가 멈추고 잠금 화면, P에서 다시 열림(`show.sh ux` 9/9). 기어가 P가 아니면 Pleos 홈이 앱 화면을 가림(소리·기록은 이어짐) |
 
 ## 검증 결과 (Pleos Connect Emulator v2.1.0)
 
 | 항목 | 결과 | 목표 |
 |---|---|---|
-| 단위 테스트 | 255개 통과 (`./gradlew testDebugUnitTest`) | 전부 |
+| 단위 테스트 | 263개 통과 (`./gradlew testDebugUnitTest`) | 전부 |
 | 페달 → 소리 | Virtual Console 중앙값 77ms, 웹 페달 중앙값 91ms(최대 105) | 중앙값 100ms 이하 |
 | 주행 중 앱 CPU | 1코어의 15.1%(직렬 4기통)~17.5%(V12, 30분 평균), 4코어 전체의 약 4% | 4코어 기준 5% 미만 |
 | 개러지 대기(엔진 꺼짐, 시연 모드·웹 페달 서버) | 1코어의 4.0% | 5% 이하 |
@@ -67,6 +67,7 @@ bash tools/show.sh video     # 같은 흐름을 소리와 함께 녹화 -> docs/
 | 30분 연속 주행 (V12, 33주기) | 재시작·크래시·ANR 0, PSS 108 → 128MB에서 안정 | 무중단 |
 | 각본 주행 판정 | 기대값과 같음, 거리 = 콘솔 주행계 | 일치 |
 | 다른 앱이 앞에 있을 때 | 엔진음과 주행 기록 유지(미디어 재생 포그라운드 서비스) | 유지 |
+| 주행 규제(CarUxRestrictions) | N 정차에서 미리 듣기 중단·잠금 화면, P에서 다시 열림, D에서 주행 화면 (`show.sh ux` 9/9) | 정차 전용 기능은 DO가 필요 없을 때만 |
 
 결과 문서: [`docs/m0-findings.md`](docs/m0-findings.md)(신호·오디오 검증), [`m1-results.md`](docs/m1-results.md)(사운드 엔진), [`m2-results.md`](docs/m2-results.md)(개러지·경제), [`m3-results.md`](docs/m3-results.md)(주행·안전·결산), [`m4-results.md`](docs/m4-results.md)(시연·제출).
 
@@ -75,7 +76,7 @@ bash tools/show.sh video     # 같은 흐름을 소리와 함께 녹화 -> docs/
 순수 Kotlin 코어(`core/`, android.* 없음, JVM 테스트)와 Android·Pleos 어댑터(`adapters/`), 화면(`ui/`)으로 나눴습니다.
 
 - `core/powertrain` 가상 파워트레인·변속기·부하 추정, `core/synth` 실린더별 배기 펄스 합성(`EngineVoice`, `FiringPlans`), `core/sound`·`core/dsp` 흡기·팝콘 레이어와 배기 EQ·믹서, `core/runtime` 블록마다 파워트레인 → 디렉터 → 믹서
-- `core/garage` 부품 표·해금·장착·번호판·소리 성향·미리 듣기, `core/trip` 거리·제한속도·스쿨존·카메라·방향지시등 판정과 포인트·결산 문구, `core/situation` 상황 인지 볼륨, `core/flow` 화면 흐름, `core/demo` 시연 규칙·웹 페달 메시지
+- `core/garage` 부품 표·해금·장착·번호판·소리 성향·미리 듣기, `core/trip` 거리·제한속도·스쿨존·카메라·방향지시등 판정과 포인트·결산 문구, `core/situation` 상황 인지 볼륨, `core/flow` 화면 흐름·주행 규제 게이트(`UxGate`), `core/demo` 시연 규칙·웹 페달 메시지
 - `EngineHost` 앱 전체가 쓰는 엔진, `DriveHost` 주행 기록·정산·상황 볼륨·화면 전환, `DemoHost` 시연 모드와 시연 지갑·웹 페달, `DriveService` 다른 앱이 앞에 있어도 엔진음과 기록을 잇는 포그라운드 서비스
 - `adapters/` AudioTrack 출력, 재생 감지, AAOS 차량 속성, Pleos 차량 신호·내비 이벤트, Virtual Console 주행, 지갑 저장(`GarageRepository`), adb 명령(`DemoBus`, adb와 시스템만 보낼 수 있음), 웹 페달 서버(`PedalServer`)
 - `ui/` 첫 실행, 개러지(부품 카드·3D 무대·세팅 탭), 시동, 주행, 결산 (Jetpack Compose)
@@ -86,7 +87,7 @@ JDK 17, 저장소는 ASCII 경로에 둡니다(AGP가 한글 경로를 거부).
 
 ```bash
 export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-17.0.20.101-hotspot"
-./gradlew testDebugUnitTest          # 단위 테스트 255개
+./gradlew testDebugUnitTest          # 단위 테스트 263개
 ./gradlew assembleRelease            # app/build/outputs/apk/release/app-release.apk (debug 키 서명)
 ./gradlew installDebug               # 에뮬레이터에 개발용 빌드
 ```
@@ -101,7 +102,7 @@ export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-17.0.20.101-hotspot"
 ## 알려진 제한
 
 - 가속 페달 신호는 지금 SDK로 읽을 수 없습니다. 시연은 Virtual Console 페달이고, 실차에서는 차속 변화율로 부하를 추정합니다.
-- 주행 중에는 Pleos 홈이 서드파티 앱 화면을 가립니다(정차 중 D에서도 가려질 때가 있음). Downshift는 그동안 소리와 기록으로 동작합니다.
+- 기어가 P가 아니면 정차 중에도 Pleos 홈이 서드파티 앱 화면을 가립니다(DO를 선언한 앱도). Downshift는 그동안 소리와 기록으로 동작하고, 화면은 P에서 씁니다.
 - 에뮬레이터 내비는 제한속도·카메라·주의구간 이벤트를 보내지 않아, 시연 모드에서 adb나 웹 페달 진행자 버튼으로 넣습니다.
 - 실차에서 아직 확인하지 못한 것: 내비 이벤트, 좌석 값, 차량 경고음과의 덕킹, 1칸(세로) 레이아웃.
 
@@ -114,7 +115,7 @@ adb shell am broadcast -n $R --es cmd garage --es action reset                  
 adb shell am broadcast -n $R --es cmd garage --es action preview --es part v8      # unlock | equip | tab (개러지 화면에서)
 adb shell am broadcast -n $R --es cmd drive --es event limit --ei kph 50           # camera | school | turn | lapse: 시연 모드에서만
 adb shell am broadcast -n $R --es cmd drive --es event guide                       # 내비 안내음 대역
-bash tools/show.sh wallet|latency|cpu|background|soak|coldstart|release|shots      # M4 확인 (docs/m4/)
+bash tools/show.sh wallet|latency|cpu|background|soak|coldstart|release|shots|ux   # M4 확인 (docs/m4/)
 bash tools/drive.sh flow|trip|persist|cpu|music                                    # M3 주행 확인 (docs/m3/)
 bash tools/garage.sh flow|persist|cpu|mem|frames                                   # M2 개러지 확인 (docs/m2/)
 bash tools/sound.sh scenario v8_turbo|latency|cpu                                  # M1 사운드 확인 (docs/m1/)
