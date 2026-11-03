@@ -17,11 +17,12 @@ import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
 /**
- * The garage's WebP assets, decoded on an IO thread at the size they are drawn (the longer side at most px) and kept
- * in a small LRU cache, so neither the cards nor the turntable ever decode on the main thread.
+ * The garage's WebP assets, decoded on an IO thread at the size they are drawn (the longer side at most px), so
+ * nothing decodes on the main thread. Card pictures, heroes and chips stay in a small LRU cache; the turntable keeps
+ * its own frames (only the shown engine's) and decodes them with [decode].
  */
 object GarageImages {
-    private const val MAX_BYTES = 48 * 1024 * 1024
+    private const val MAX_BYTES = 16 * 1024 * 1024
     private val cache = object : LruCache<String, ImageBitmap>(MAX_BYTES) {
         override fun sizeOf(key: String, value: ImageBitmap) = value.width * value.height * 4
     }
@@ -29,14 +30,17 @@ object GarageImages {
     fun cached(path: String, px: Int): ImageBitmap? = cache.get(key(path, px))
 
     suspend fun load(context: Context, path: String, px: Int): ImageBitmap? = cached(path, px) ?: withContext(Dispatchers.IO) {
-        runCatching {
-            ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.assets, path)) { decoder, info, _ ->
-                val s = px.toFloat() / maxOf(info.size.width, info.size.height)
-                if (s < 1f) decoder.setTargetSize((info.size.width * s).roundToInt(), (info.size.height * s).roundToInt())
-                decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
-            }.asImageBitmap()
-        }.getOrNull()?.also { cache.put(key(path, px), it) }
+        decode(context, path, px)?.also { cache.put(key(path, px), it) }
     }
+
+    /** Decodes without caching; call it off the main thread. Null when the asset is missing or broken. */
+    fun decode(context: Context, path: String, px: Int): ImageBitmap? = runCatching {
+        ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.assets, path)) { decoder, info, _ ->
+            val s = px.toFloat() / maxOf(info.size.width, info.size.height)
+            if (s < 1f) decoder.setTargetSize((info.size.width * s).roundToInt(), (info.size.height * s).roundToInt())
+            decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+        }.asImageBitmap()
+    }.getOrNull()
 
     private fun key(path: String, px: Int) = "$path@$px"
 }

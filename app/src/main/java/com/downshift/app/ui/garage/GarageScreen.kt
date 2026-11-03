@@ -1,7 +1,6 @@
 package com.downshift.app.ui.garage
 
 import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -48,7 +46,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -73,6 +70,7 @@ import com.downshift.app.core.garage.Garage
 import com.downshift.app.core.garage.Part
 import com.downshift.app.core.garage.PartKind
 import com.downshift.app.core.garage.PartStatus
+import com.downshift.app.core.garage.SoundCharacter
 import com.downshift.app.ui.Clean
 import com.downshift.app.ui.Condensed
 import com.downshift.app.ui.Dim
@@ -172,23 +170,24 @@ private fun BuildColumn(ui: GarageUi, vm: GarageViewModel, modifier: Modifier) {
             if (preview != null) Text("선택한 부품으로 미리보기", color = Heat, fontSize = 20.sp, fontWeight = FontWeight.Medium)
         }
         Plate(Garage.plate(shown), 32)
-        StageStill(shownEngine(ui), Modifier.size(504.dp, 320.dp))
+        EngineStage(ui, wide = true)
         EngineName(shownEngine(ui))
+        SoundCharacterBars(SoundCharacter.of(ui.state), SoundCharacter.of(ui.state, preview?.id), wide = true)
         Spacer(Modifier.weight(1f))
         StartButton(ui, vm, 96.dp)
     }
 }
 
-/** One column: the engine and the start button side by side above the parts. */
+/** One column: the stage beside the plate, the bars and the start button, above the parts. */
 @Composable
 private fun BuildStrip(ui: GarageUi, vm: GarageViewModel) {
     val preview = previewedPart(ui)
     val shown = if (preview != null) Garage.preview(ui.state, preview.id) else Garage.build(ui.state)
     Row(Modifier.fillMaxWidth().bottomRule().padding(horizontal = 32.dp, vertical = 20.dp), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-        StageStill(shownEngine(ui), Modifier.size(340.dp, 290.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        EngineStage(ui, wide = false)
+        Column(Modifier.weight(1f).height(290.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Plate(Garage.plate(shown), 26)
-            EngineName(shownEngine(ui))
+            SoundCharacterBars(SoundCharacter.of(ui.state), SoundCharacter.of(ui.state, preview?.id), wide = false)
             Spacer(Modifier.weight(1f))
             StartButton(ui, vm, 72.dp)
         }
@@ -215,16 +214,6 @@ internal fun Plate(text: String, fontSize: Int) {
         val needed = remember(text, style) { measurer.measure(text, style, softWrap = false).size.width }
         val fitted = if (needed <= room) style else style.copy(fontSize = (fontSize * room.toFloat() / needed).sp)
         Text(text, style = fitted, maxLines = 1, softWrap = false)
-    }
-}
-
-/** The stage before the turntable: the engine's hero picture on the design's lit backdrop. */
-@Composable
-private fun StageStill(engine: Part, modifier: Modifier) {
-    val px = with(LocalDensity.current) { 340.dp.roundToPx() }
-    val image = rememberAssetImage("engine3d/${engine.id}/hero.webp", px)
-    Box(modifier.clip(RoundedCornerShape(16.dp)).background(StageBackdrop).border(1.dp, StageEdge, RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-        if (image != null) Image(image, contentDescription = engineLabel(engine), modifier = Modifier.size(340.dp).offset(y = (-14).dp))
     }
 }
 
@@ -293,7 +282,7 @@ private fun PartsSection(ui: GarageUi, vm: GarageViewModel, wide: Boolean, modif
                 .padding(if (wide) PaddingValues(horizontal = 40.dp, vertical = 32.dp) else PaddingValues(horizontal = 32.dp, vertical = 20.dp)),
         ) {
             val category = ui.tab.category
-            if (category == null) TunePanel(ui, vm) else PartsGrid(ui, category, wide, vm)
+            if (category == null) TuneTab(ui, vm) else PartsGrid(ui, category, wide, vm)
         }
         ActionBar(ui, wide, vm)
     }
@@ -343,12 +332,6 @@ private fun PartsGrid(ui: GarageUi, category: Category, wide: Boolean, vm: Garag
             }
         }
     }
-}
-
-/** The tune tab (filled in with the stage work): for now the two demo buttons. */
-@Composable
-private fun TunePanel(ui: GarageUi, vm: GarageViewModel) {
-    DemoButtons(vm)
 }
 
 @Composable
