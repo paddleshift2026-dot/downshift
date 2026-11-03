@@ -1,0 +1,7 @@
+app memory after showing every engine's turntable, 2026-11-03 11:41
+Native Heap    45919    45912        0       17    46760    61484    48149     9197
+Java Heap:    12648                          31488
+Native Heap:    45912                          46760
+Graphics:        0                              0
+TOTAL PSS:   101902            TOTAL RSS:   201656       TOTAL SWAP PSS:      137
+(budget: PSS <= 400 MB)

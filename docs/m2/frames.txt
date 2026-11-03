@@ -1,0 +1,13 @@
+garage frames over 7 tab switches (with spins) and 3 engine picks, 2026-11-03 11:41
+Total frames rendered: 104
+Janky frames: 69 (66.35%)
+Janky frames (legacy): 72 (69.23%)
+50th percentile: 32ms
+90th percentile: 93ms
+95th percentile: 101ms
+99th percentile: 117ms
+Number Slow UI thread: 31
+Number Slow bitmap uploads: 2
+Number Slow issue draw commands: 54
+Number Frame deadline missed: 69
+Number Frame deadline missed (legacy): 53

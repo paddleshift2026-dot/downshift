@@ -19,3 +19,6 @@ app/src/main/assets/engines/
 
 # emulator recordings of the synth pack are large; regenerate them with tools/sound.sh
 docs/m1/renders/*.wav
+
+# the garage flow recording is large; regenerate it with tools/garage.sh flow
+docs/m2/*.wav

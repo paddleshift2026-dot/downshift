@@ -1,0 +1,3 @@
+saved before the force stop: {"version":1,"balance":1600,"owned":["i4","v8","na","t1","t2","stock","sport","at","dct","v12"],"engine":"v12","intake":"t2","exhaust":"sport","transmission":"dct","tune":{"pops":3,"redlineOffset":0,"volume":80}}
+saved after reopening:       {"version":1,"balance":1600,"owned":["i4","v8","na","t1","t2","stock","sport","at","dct","v12"],"engine":"v12","intake":"t2","exhaust":"sport","transmission":"dct","tune":{"pops":3,"redlineOffset":0,"volume":80}}
+result: kept
