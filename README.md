@@ -27,7 +27,7 @@ adb shell am start -n com.downshift.app/.MainActivity     # 처음 열 때 차�
 
 권한을 미리 주려면 `bash tools/probe.sh grant`(앱은 운전자 사용자 10으로 돕니다).
 
-## 시연 순서 (PT 약 4분, 영상 2분 56초)
+## 시연 순서 (PT 약 4분, 영상 2분 48초)
 
 | 장면 | 하는 일 |
 |---|---|
