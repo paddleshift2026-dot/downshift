@@ -18,7 +18,7 @@
 준비: Android Studio의 Pleos Connect Emulator v2.1.0 AVD(API 34, Automotive), PC의 adb. 기어·페달·좌석은 에뮬레이터 안의 Virtual Console로 바꿉니다(`adb forward tcp:8088 tcp:8088` 후 브라우저로 http://127.0.0.1:8088).
 
 ```bash
-adb install -r apk/Downshift_release.apk
+adb install -r apk/PaddleShift_Downshift_release.apk
 adb shell am start -n com.downshift.app/.MainActivity     # 처음 열 때 차속 등 권한을 묻습니다: 허용
 ```
 
