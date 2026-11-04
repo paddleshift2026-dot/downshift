@@ -11,6 +11,8 @@
 - **상황 인지 볼륨.** 내비 안내·통화가 나오면 −12dB, 스쿨존·주거지에서 −10dB, 동승자가 타면 볼륨 상한 40%.
 - **실내 스피커 전용.** 외부 스피커와 보행자 경고음(AVAS)은 건드리지 않습니다. 주행 중에는 rpm·속도를 보여 주지 않습니다.
 
+**시연 영상:** https://www.youtube.com/watch?v=OdsVt90-7JU (2분 48초, 소리·설명 자막 포함, Pleos Connect Emulator v2.1.0 실제 실행)
+
 ## 바로 실행하기 (심사용)
 
 준비: Android Studio의 Pleos Connect Emulator v2.1.0 AVD(API 34, Automotive), PC의 adb. 기어·페달·좌석은 에뮬레이터 안의 Virtual Console로 바꿉니다(`adb forward tcp:8088 tcp:8088` 후 브라우저로 http://127.0.0.1:8088).
