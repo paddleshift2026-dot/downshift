@@ -41,6 +41,7 @@ adb shell am start -n com.downshift.app/.MainActivity     # 처음 열 때 차�
 ```bash
 bash tools/show.sh pt        # 장면마다 Enter (PT_AUTO=1 이면 한 번에, PT_PEDAL=web 이면 레브를 웹 페달에 맡김)
 bash tools/show.sh video     # 같은 흐름을 소리와 함께 녹화 -> docs/m4/demo.webm, 자막 demo.srt, youtube.md
+python tools/serve_save.py . docs/m4   # 그다음 브라우저로 http://127.0.0.1:8799/tools/caption_burn.html -> 자막을 입힌 demo_captioned.webm (?size=720 이면 휴대폰용 23MB)
 ```
 
 ## 차량 데이터와 Pleos SDK

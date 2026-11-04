@@ -9,7 +9,9 @@
 #   bash tools/show.sh pt         # PT rehearsal scene by scene (Enter); PT_AUTO=1 straight through, PT_PEDAL=web for
 #                                 #   the revs on the web pedal, PT_VOLUME=0..45 the car volume (default 35)
 #   bash tools/show.sh video      # a cold start and the PT flow recorded with sound (car volume 45, then 20) -> demo.webm,
-#                                 #   demo.srt (subtitles), youtube.md (title, description, chapters)
+#                                 #   demo.srt (subtitles), youtube.md (title, description, chapters); then burn the
+#                                 #   subtitles in: python tools/serve_save.py . docs/m4 and open
+#                                 #   http://127.0.0.1:8799/tools/caption_burn.html (?size=720 for a phone copy)
 #   bash tools/show.sh shots      # screenshots for the planning document and the README -> docs/m4/shots/*.jpg
 #   bash tools/show.sh volume N   # the car's media volume index, 0..45 (the emulator starts at 20)
 #   bash tools/show.sh soak [MIN] # MIN minutes (30) of drive cycles with V12 running: restarts, CPU, PSS -> docs/m4/soak.txt
@@ -250,7 +252,7 @@ youtube() {
 
 - 제목: Downshift (다운시프트) — 차 안에서만 들리는 내 엔진 | 2026 현대자동차그룹 차량용 앱 개발 공모전 시연
 - 공개 범위: 일부 공개(미등록)
-- 자막: \`demo.srt\`를 YouTube Studio → 자막 → 파일 업로드(타이밍 포함)
+- 올릴 파일: \`demo_captioned.webm\` (설명 자막이 영상에 들어 있음, \`tools/caption_burn.html\`로 만듦). \`demo.srt\`는 올리지 않아도 됨(올리면 CC를 켠 사람에게 자막이 두 번 보임)
 
 ## 설명
 
@@ -305,6 +307,7 @@ video() {
   youtube > "$OUT/youtube.md"
   echo "  demo.srt ($CUE cues), youtube.md"
   log | grep "trip done" | tail -1 | sed -E 's/.*trip done //'
+  echo "  subtitles into the video: python tools/serve_save.py . docs/m4, then open http://127.0.0.1:8799/tools/caption_burn.html"
 }
 
 # "yes" when the Pleos home covers the app (its cover is light grey where the app is dark).

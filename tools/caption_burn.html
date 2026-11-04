@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caption burn</title>
+<style>
+  :root { --ground: #0c0d0f; --ink: #f2f3f5; --muted: #a9afb8; --heat: #ff7a30; }
+  body { margin: 0; padding: 24px; background: var(--ground); color: var(--ink); font: 16px/1.5 "Malgun Gothic", system-ui, sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 12px; }
+  #log { white-space: pre-wrap; color: var(--muted); }
+  progress { width: 100%; accent-color: var(--heat); }
+</style>
+</head>
+<body>
+<h1>자막 입히기</h1>
+<progress id="bar" max="1" value="0"></progress>
+<div id="log"></div>
+<script>
+/*
+ * Burns the demo subtitles into the demo video, in the browser and with nothing to install: the WebM is read here, its
+ * VP9 frames are decoded (WebCodecs), each frame gets the cue that is showing at that moment drawn over the Pleos dock
+ * at the bottom, the frames are encoded again as VP9, and the original Vorbis audio is copied as it is. The new WebM
+ * is posted to /save/NAME, which tools/serve_save.py writes next to the video.
+ *
+ *   python tools/serve_save.py . docs/m4        (from the repository root)
+ *   open http://127.0.0.1:8799/tools/caption_burn.html   ->   docs/m4/demo_captioned.webm
+ *
+ * Query: video= (../docs/m4/demo.webm), srt= (../docs/m4/demo.srt), size=1080|720 (1080; 720 is a small copy at a
+ * constant 1 Mbps, about 22 MB, that fits a phone), kbps=, out= (demo_captioned.webm or demo_captioned_720p.webm).
+ * Progress is also kept in window.burn = { phase, done, frames, total, error }.
+ */
+const q = new URLSearchParams(location.search);
+const VIDEO = q.get('video') || '../docs/m4/demo.webm';
+const SRT = q.get('srt') || '../docs/m4/demo.srt';
+const SIZE = q.get('size') === '720' ? 720 : 1080;
+const OUT = q.get('out') || (SIZE === 720 ? 'demo_captioned_720p.webm' : 'demo_captioned.webm');
+const W = 1920, H = 1080;          // the recording; everything is drawn in its coordinates
+const OW = SIZE === 720 ? 1280 : W, OH = SIZE === 720 ? 720 : H;
+const DOCK = 106;                  // the Pleos dock at the bottom of a 1920x1080 recording; captions sit on it
+const KEY_EVERY = 48;              // a keyframe every 2 s at 24 fps
+const BITRATE = +(q.get('kbps') || (SIZE === 720 ? 1000 : 12000)) * 1000;
+const BITRATE_MODE = SIZE === 720 ? 'constant' : 'variable';
+
+const burn = window.burn = { phase: 'start', done: false, frames: 0, total: 0, error: null };
+const logEl = document.getElementById('log'), bar = document.getElementById('bar');
+const log = (s) => { logEl.textContent += s + '\n'; };
+
+// ---- EBML reading ----------------------------------------------------------------------------------------------
+const ID = {
+  EBML: 0x1A45DFA3, SEGMENT: 0x18538067, INFO: 0x1549A966, TIMECODESCALE: 0x2AD7B1, TRACKS: 0x1654AE6B,
+  TRACKENTRY: 0xAE, TRACKNUMBER: 0xD7, CODECID: 0x86, CLUSTER: 0x1F43B675, TIMECODE: 0xE7, SIMPLEBLOCK: 0xA3,
+  BLOCKGROUP: 0xA0, BLOCK: 0xA1, REFERENCEBLOCK: 0xFB, SEEKHEAD: 0x114D9B74, SEEK: 0x4DBB, SEEKID: 0x53AB,
+  SEEKPOSITION: 0x53AC, CUES: 0x1C53BB6B, CUEPOINT: 0xBB, CUETIME: 0xB3, CUETRACKPOSITIONS: 0xB7, CUETRACK: 0xF7,
+  CUECLUSTERPOSITION: 0xF1, DURATION: 0x4489, MUXINGAPP: 0x4D80, WRITINGAPP: 0x5741,
+};
+
+/** A variable-length integer at i: [value, length, allOnes]; IDs keep their marker bits (mask = false). */
+function vint(b, i, mask = true) {
+  const first = b[i];
+  let n = 1, m = 0x80;
+  while (n <= 8 && !(first & m)) { n++; m >>= 1; }
+  let v = mask ? first & (m - 1) : first;
+  let ones = (first & (m - 1)) === m - 1;
+  for (let k = 1; k < n; k++) { v = v * 256 + b[i + k]; ones = ones && b[i + k] === 0xff; }
+  return [v, n, ones];
+}
+
+/** The child elements between start and end: [id, headerStart, payloadStart, payloadEnd]. */
+function* elements(b, start, end) {
+  let i = start;
+  while (i < end) {
+    const h = i;
+    const [id, n] = vint(b, i, false); i += n;
+    const [size, m, unknown] = vint(b, i); i += m;
+    const e = unknown ? end : Math.min(i + size, end);
+    yield [id, h, i, e];
+    i = e;
+  }
+}
+
+const uintOf = (b, s, e) => { let v = 0; for (let i = s; i < e; i++) v = v * 256 + b[i]; return v; };
+
+function demux(b) {
+  const tracks = {}, video = [], audio = [];
+  let scale = 1_000_000;
+  for (const [id, , s, e] of elements(b, 0, b.length)) {
+    if (id !== ID.SEGMENT) continue;
+    for (const [cid, ch, cs, ce] of elements(b, s, e)) {
+      if (cid === ID.INFO) {
+        for (const [iid, , is, ie] of elements(b, cs, ce)) if (iid === ID.TIMECODESCALE) scale = uintOf(b, is, ie);
+      } else if (cid === ID.TRACKS) {
+        for (const [tid, th, ts, te] of elements(b, cs, ce)) {
+          if (tid !== ID.TRACKENTRY) continue;
+          const t = { raw: b.subarray(th, te) };
+          for (const [fid, , fs, fe] of elements(b, ts, te)) {
+            if (fid === ID.TRACKNUMBER) t.number = uintOf(b, fs, fe);
+            if (fid === ID.CODECID) t.codec = new TextDecoder().decode(b.subarray(fs, fe));
+          }
+          tracks[t.number] = t;
+        }
+      } else if (cid === ID.CLUSTER) {
+        let base = 0;
+        for (const [bid, , bs, be] of elements(b, cs, ce)) {
+          if (bid === ID.TIMECODE) { base = uintOf(b, bs, be); continue; }
+          let x, y, key;
+          if (bid === ID.SIMPLEBLOCK) { x = bs; y = be; key = null; }
+          else if (bid === ID.BLOCKGROUP) {
+            key = true;
+            for (const [gid, , gs, ge] of elements(b, bs, be)) {
+              if (gid === ID.BLOCK) { x = gs; y = ge; }
+              if (gid === ID.REFERENCEBLOCK) key = false;
+            }
+            if (x === undefined) continue;
+          } else continue;
+          const [track, n] = vint(b, x);
+          const rel = (b[x + n] << 24 >> 16) | b[x + n + 1];
+          const flags = b[x + n + 2];
+          if (flags & 0x06) throw new Error('laced blocks are not handled');
+          const block = { t: Math.round((base + rel) * scale / 1e6), key: key === null ? (flags & 0x80) !== 0 : key, data: b.subarray(x + n + 3, y) };
+          const kind = tracks[track] && tracks[track].codec;
+          if (kind === 'V_VP9') video.push(block); else if (kind && kind.startsWith('A_')) audio.push({ ...block, track });
+        }
+      }
+    }
+  }
+  return { tracks, video, audio };
+}
+
+// ---- subtitles ---------------------------------------------------------------------------------------------------
+function parseSrt(text) {
+  const ms = (h, m, s, f) => ((+h * 60 + +m) * 60 + +s) * 1000 + +f;
+  return text.replace(/\r/g, '').trim().split(/\n\n+/).map((cue) => {
+    const lines = cue.split('\n');
+    const t = lines[1].match(/(\d+):(\d+):(\d+),(\d+) --> (\d+):(\d+):(\d+),(\d+)/);
+    return { start: ms(t[1], t[2], t[3], t[4]), end: ms(t[5], t[6], t[7], t[8]), text: lines.slice(2).join(' ') };
+  });
+}
+
+function drawCaption(g, text) {
+  const family = '"Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif';
+  let size = 40;
+  g.font = `600 ${size}px ${family}`;
+  while (g.measureText(text).width > W - 160 && size > 26) { size -= 2; g.font = `600 ${size}px ${family}`; }
+  const width = g.measureText(text).width, boxW = width + 72, boxH = DOCK - 22;
+  const x = (W - boxW) / 2, y = H - DOCK + 11;
+  g.fillStyle = 'rgba(12, 13, 15, 0.94)'; // dark enough that the dock icons underneath do not show through the words
+  g.beginPath(); g.roundRect(x, y, boxW, boxH, 16); g.fill();
+  g.fillStyle = '#f2f3f5'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(text, W / 2, y + boxH / 2 + 1);
+}
+
+// ---- EBML writing -----------------------------------------------------------------------------------------------
+const bytes = (arr) => Uint8Array.from(arr);
+function idBytes(id) { const out = []; for (let v = id; v > 0; v = Math.floor(v / 256)) out.unshift(v % 256); return bytes(out); }
+function sizeBytes(n, len = 0) {
+  if (!len) { len = 1; while (n >= Math.pow(2, 7 * len) - 1) len++; }
+  const out = new Array(len);
+  for (let k = len - 1, v = n; k >= 0; k--, v = Math.floor(v / 256)) out[k] = v % 256;
+  out[0] |= 0x80 >> (len - 1);
+  return bytes(out);
+}
+function uint(n, len = 0) {
+  const out = [];
+  for (let v = n; v > 0 || out.length === 0; v = Math.floor(v / 256)) out.unshift(v % 256);
+  while (out.length < len) out.unshift(0);
+  return bytes(out);
+}
+function float64(x) { const b = new Uint8Array(8); new DataView(b.buffer).setFloat64(0, x); return b; }
+const text = (s) => new TextEncoder().encode(s);
+const length = (parts) => parts.reduce((n, p) => n + p.length, 0);
+/** An element as a list of parts (no copy of the payload). */
+function el(id, ...payload) { const flat = payload.flat(); return [idBytes(id), sizeBytes(length(flat)), ...flat]; }
+
+function mux(videoChunks, audio, tracks, durationMs) {
+  const vNum = Object.values(tracks).find((t) => t.codec === 'V_VP9').number;
+  const blocks = [
+    ...videoChunks.map((c) => ({ ...c, track: vNum })),
+    ...audio.map((a) => ({ ...a, key: true })),
+  ].sort((a, b) => a.t - b.t || (a.track === vNum ? 1 : -1));
+  // A cluster starts at each video keyframe, so the cues can point at it.
+  const clusters = [];
+  let cur = null;
+  for (const blk of blocks) {
+    if (!cur || (blk.track === vNum && blk.key) || blk.t - cur.t > 30_000) { cur = { t: blk.t, key: blk.track === vNum && blk.key, blocks: [] }; clusters.push(cur); }
+    cur.blocks.push(blk);
+  }
+  const clusterParts = clusters.map((c) => el(ID.CLUSTER, el(ID.TIMECODE, uint(c.t)), ...c.blocks.map((blk) =>
+    el(ID.SIMPLEBLOCK, sizeBytes(blk.track), bytes([((blk.t - c.t) >> 8) & 0xff, (blk.t - c.t) & 0xff, blk.key ? 0x80 : 0x00]), blk.data))));
+  const info = el(ID.INFO, el(ID.TIMECODESCALE, uint(1_000_000)), el(ID.MUXINGAPP, text('Downshift caption_burn')),
+    el(ID.WRITINGAPP, text('Downshift tools/caption_burn.html')), el(ID.DURATION, float64(durationMs)));
+  // A new video track entry (the size may have changed); the audio entries are copied as they are.
+  const videoEntry = el(ID.TRACKENTRY, el(ID.TRACKNUMBER, uint(vNum)), el(0x73C5, uint(vNum)), el(0x83, uint(1)),
+    el(ID.CODECID, text('V_VP9')), el(0xE0, el(0xB0, uint(OW)), el(0xBA, uint(OH))));
+  const trackParts = el(ID.TRACKS, videoEntry, ...Object.values(tracks).filter((t) => t.number !== vNum).map((t) => [t.raw]));
+  const seekEntry = (id, pos) => el(ID.SEEK, el(ID.SEEKID, idBytes(id)), el(ID.SEEKPOSITION, uint(pos, 8)));
+  const seekLen = length(el(ID.SEEKHEAD, seekEntry(ID.INFO, 0), seekEntry(ID.TRACKS, 0), seekEntry(ID.CUES, 0)));
+  const infoAt = seekLen, tracksAt = infoAt + length(info), clustersAt = tracksAt + length(trackParts);
+  const cuePoints = [];
+  let at = clustersAt;
+  clusters.forEach((c, i) => {
+    if (c.key) cuePoints.push(el(ID.CUEPOINT, el(ID.CUETIME, uint(c.t)), el(ID.CUETRACKPOSITIONS, el(ID.CUETRACK, uint(vNum)), el(ID.CUECLUSTERPOSITION, uint(at)))));
+    at += length(clusterParts[i]);
+  });
+  const cues = el(ID.CUES, ...cuePoints);
+  const seekHead = el(ID.SEEKHEAD, seekEntry(ID.INFO, infoAt), seekEntry(ID.TRACKS, tracksAt), seekEntry(ID.CUES, at));
+  const body = [...seekHead, ...info, ...trackParts, ...clusterParts.flat(), ...cues];
+  const header = el(ID.EBML, el(0x4286, uint(1)), el(0x42F7, uint(1)), el(0x42F2, uint(4)), el(0x42F3, uint(8)),
+    el(0x4282, text('webm')), el(0x4287, uint(4)), el(0x4285, uint(2)));
+  return new Blob([...header, idBytes(ID.SEGMENT), sizeBytes(length(body), 8), ...body], { type: 'video/webm' });
+}
+
+// ---- the run ----------------------------------------------------------------------------------------------------
+const dequeued = (codec) => new Promise((r) => codec.addEventListener('dequeue', r, { once: true }));
+
+async function run() {
+  burn.phase = 'reading';
+  const [buf, srtText] = await Promise.all([fetch(VIDEO).then((r) => r.arrayBuffer()), fetch(SRT).then((r) => r.text())]);
+  const input = new Uint8Array(buf);
+  const { tracks, video, audio } = demux(input);
+  const cues = parseSrt(srtText);
+  burn.total = video.length;
+  log(`${VIDEO}: ${(input.length / 1e6).toFixed(1)} MB, ${video.length} video frames, ${audio.length} audio blocks, ${cues.length} cues -> ${OW}x${OH}, ${BITRATE / 1000} kbps ${BITRATE_MODE}`);
+
+  const canvas = new OffscreenCanvas(OW, OH), g = canvas.getContext('2d');
+  g.setTransform(OW / W, 0, 0, OH / H, 0, 0);
+  const out = [];
+  let failure = null, n = 0;
+  const encoder = new VideoEncoder({
+    output: (chunk) => { const data = new Uint8Array(chunk.byteLength); chunk.copyTo(data); out.push({ t: Math.round(chunk.timestamp / 1000), key: chunk.type === 'key', data }); },
+    error: (e) => { failure = e; },
+  });
+  encoder.configure({ codec: 'vp09.00.40.08', width: OW, height: OH, bitrate: BITRATE, bitrateMode: BITRATE_MODE, framerate: 24, latencyMode: 'realtime' });
+  const decoder = new VideoDecoder({
+    output: (frame) => {
+      const ms = frame.timestamp / 1000;
+      g.drawImage(frame, 0, 0, W, H);
+      frame.close();
+      const cue = cues.find((c) => ms >= c.start && ms < c.end);
+      if (cue) drawCaption(g, cue.text);
+      const next = new VideoFrame(canvas, { timestamp: Math.round(ms * 1000) });
+      encoder.encode(next, { keyFrame: n % KEY_EVERY === 0 });
+      next.close();
+      n++;
+      burn.frames = n;
+      if (n % 24 === 0) bar.value = n / video.length;
+    },
+    error: (e) => { failure = e; },
+  });
+  decoder.configure({ codec: 'vp09.00.10.08', codedWidth: W, codedHeight: H });
+
+  burn.phase = 'encoding';
+  const started = performance.now();
+  for (const f of video) {
+    if (failure) throw failure;
+    while (decoder.decodeQueueSize > 4) await dequeued(decoder);
+    while (encoder.encodeQueueSize > 4) await dequeued(encoder);
+    decoder.decode(new EncodedVideoChunk({ type: f.key ? 'key' : 'delta', timestamp: f.t * 1000, data: f.data }));
+  }
+  await decoder.flush();
+  await encoder.flush();
+  if (failure) throw failure;
+  log(`encoded ${out.length} frames in ${((performance.now() - started) / 1000).toFixed(0)} s`);
+
+  burn.phase = 'muxing';
+  const last = Math.max(video[video.length - 1].t, audio.length ? audio[audio.length - 1].t : 0);
+  const blob = mux(out, audio, tracks, last + 42);
+  log(`muxed ${(blob.size / 1e6).toFixed(1)} MB`);
+
+  burn.phase = 'saving';
+  const res = await fetch('/save/' + OUT, { method: 'POST', body: blob });
+  if (!res.ok) throw new Error('save failed: ' + res.status);
+  burn.phase = 'done'; burn.done = true; burn.bytes = blob.size; burn.frames = out.length;
+  bar.value = 1;
+  log(`saved ${OUT}`);
+}
+
+run().catch((e) => { burn.error = String(e && e.stack || e); burn.phase = 'failed'; log('failed: ' + burn.error); });
+</script>
+</body>
+</html>

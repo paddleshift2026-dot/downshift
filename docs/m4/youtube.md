@@ -2,7 +2,7 @@
 
 - 제목: Downshift (다운시프트) — 차 안에서만 들리는 내 엔진 | 2026 현대자동차그룹 차량용 앱 개발 공모전 시연
 - 공개 범위: 일부 공개(미등록)
-- 자막: `demo.srt`를 YouTube Studio → 자막 → 파일 업로드(타이밍 포함)
+- 올릴 파일: `demo_captioned.webm` (설명 자막이 영상에 들어 있음, `tools/caption_burn.html`로 만듦). `demo.srt`는 올리지 않아도 됨(올리면 CC를 켠 사람에게 자막이 두 번 보임)
 
 ## 설명
 

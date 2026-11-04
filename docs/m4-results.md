@@ -16,7 +16,7 @@
 | `DriveService` | 엔진이 켜졌거나 주행 기록 중일 때 미디어 재생 포그라운드 서비스(조용한 알림), 둘 다 끝나고 5초 뒤 내림 |
 | 권한 요청 | 실행 중에 받을 수 있는(dangerous) 권한만 묻는다. 받을 수 없는 권한까지 물어 시작할 때마다 권한 창이 뜨던 것을 고침 |
 | 도구 | `tools/lib.sh`(공통 함수), `tools/show.sh`(wallet·latency·cpu·background·pt·video·shots·volume·soak·coldstart·release), `pedal_client.mjs`, `webm_audio.py`, `export_shots.py`. `drive.sh`·`garage.sh`는 lib.sh와 시연 모드를 쓴다 |
-| 시연 영상 | `show.sh video`: 에뮬레이터 자체 녹화(1920×1080 VP9 + Vorbis), 자막(`demo.srt`), YouTube 제목·설명·챕터(`youtube.md`), 장면 프레임(`video_frames.jpg`). 11/04 저녁에 다시 녹화: 168초(2분 48초), 자막 17개, 콜드 스타트의 팀 로고로 시작하고 기어 N 잠금 화면과 주행 화면이 보인다(11/03 판은 155초, 주행 중 화면이 가려짐) |
+| 시연 영상 | `show.sh video`: 에뮬레이터 자체 녹화(1920×1080 VP9 + Vorbis), 자막(`demo.srt`), YouTube 제목·설명·챕터(`youtube.md`), 장면 프레임(`video_frames.jpg`). 11/04 저녁에 다시 녹화: 168초(2분 48초), 자막 17개, 콜드 스타트의 팀 로고로 시작하고 기어 N 잠금 화면과 주행 화면이 보인다(11/03 판은 155초, 주행 중 화면이 가려짐). 설명 자막을 영상에 입힌 `demo_captioned.webm`(1080p, 60MB)과 휴대폰용 `demo_captioned_720p.webm`(23MB): `tools/caption_burn.html`이 브라우저 WebCodecs로 VP9를 다시 인코딩하고(4,029프레임 22초) 자막은 화면 아래 Pleos 독 위에 그리며, 소리는 원본 그대로 옮긴다 |
 | 캡처 | 9장 JPEG(`docs/m4/shots/`, `현기차_경진대회/화면캡처_다운시프트/`) |
 | 제출물 | 심사용 README, release APK 0.4.0(`apk/Downshift_release.apk`), 기획서 초안과 접수양식 DOCX(`현기차_경진대회/`) |
 
