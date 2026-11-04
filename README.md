@@ -89,6 +89,8 @@ python tools/serve_save.py . docs/m4   # 그다음 브라우저로 http://127.0.
 JDK 17, 저장소는 ASCII 경로에 둡니다(AGP가 한글 경로를 거부).
 
 ```bash
+git clone https://github.com/paddleshift2026-dot/downshift.git   # 비공개 저장소: 초대받은 계정으로
+cd downshift
 export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-17.0.20.101-hotspot"
 ./gradlew testDebugUnitTest          # 단위 테스트 263개
 ./gradlew assembleRelease            # app/build/outputs/apk/release/app-release.apk (debug 키 서명)
