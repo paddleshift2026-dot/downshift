@@ -28,3 +28,7 @@ docs/m3/*.wav
 docs/m4/*.webm
 docs/m4/*.wav
 docs/m4/shots/png/
+
+# The user's voice takes and the synthetic stand-ins (voice parts): never in git
+docs/m5/voice_user/
+docs/m5/samples/
