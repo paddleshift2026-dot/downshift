@@ -11,12 +11,14 @@ import com.downshift.app.core.garage.Catalog
 import com.downshift.app.core.garage.Garage
 import com.downshift.app.core.garage.GarageState
 import com.downshift.app.core.garage.Turntable
+import com.downshift.app.core.voice.VoiceSlot
 import com.downshift.app.ui.garage.engineLabel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
@@ -50,6 +52,7 @@ class StartViewModel(app: Application) : AndroidViewModel(app) {
     private val host = (app as DownshiftApp).host
     private val drive = (app as DownshiftApp).drive
     private val garage = (app as DownshiftApp).garage
+    private val voice = (app as DownshiftApp).voice
     private val openedAtMs = System.currentTimeMillis()
 
     private val _ui = MutableStateFlow(StartUi())
@@ -62,7 +65,7 @@ class StartViewModel(app: Application) : AndroidViewModel(app) {
     val ignitions: StateFlow<Int> = _ignitions.asStateFlow()
 
     init {
-        viewModelScope.launch { garage.state.collect { s -> _ui.update { describe(it, s) } } }
+        viewModelScope.launch { combine(garage.state, voice.recorded) { s, r -> s to r }.collect { (s, r) -> _ui.update { describe(it, s, r) } } }
         viewModelScope.launch {
             _ui.subscriptionCount.map { it > 0 }.distinctUntilChanged().collectLatest { shown ->
                 while (shown) {
@@ -102,7 +105,7 @@ class StartViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun describe(u: StartUi, s: GarageState): StartUi {
+    private fun describe(u: StartUi, s: GarageState, recorded: Set<VoiceSlot>): StartUi {
         val engine = Catalog.part(s.engine)!!
         val spec = Engines.spec(Garage.build(s).engine)
         val extra = when (Turntable.variant(s.engine, s.intake)) {
@@ -110,11 +113,12 @@ class StartViewModel(app: Application) : AndroidViewModel(app) {
             "v12t" -> " · 트윈 터보"
             else -> ""
         }
+        val voiced = if (Garage.voicesHeard(s, VoiceSlot.categories(recorded)).isNotEmpty()) " · 내 목소리" else ""
         val redline = spec.redlineRpm + s.tune.redlineOffset
         val full = if (redline > 7_500) 9_000 else 8_000
         return u.copy(
             plate = Garage.plate(Garage.build(s)),
-            engineLine = "${engineLabel(engine)} · 점화 순서 ${spec.firingOrder}$extra",
+            engineLine = "${engineLabel(engine)} · 점화 순서 ${spec.firingOrder}$extra$voiced",
             variant = Turntable.variant(s.engine, s.intake),
             fullScale = full,
             redline = (redline / full).toFloat(),

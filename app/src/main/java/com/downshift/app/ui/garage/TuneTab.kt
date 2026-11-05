@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -80,6 +82,7 @@ internal fun TuneTab(ui: GarageUi, vm: GarageViewModel) {
             onDec = { set(t.copy(volume = t.volume - VOLUME_STEP)) }, onInc = { set(t.copy(volume = t.volume + VOLUME_STEP)) },
         )
         SafetyNoteRow(vm)
+        if (ui.recorded.isNotEmpty()) VoiceDeleteRow(parked, vm)
         DemoModeRow(demoOn, parked, vm)
         if (demoOn) DemoSection(vm)
     }
@@ -182,6 +185,34 @@ private fun OnOff(on: Boolean) {
         contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart,
     ) {
         Box(Modifier.size(32.dp).clip(CircleShape).background(Ink))
+    }
+}
+
+/** Spec 7: every take deleted and every voice card off, after a confirmation. */
+@Composable
+private fun VoiceDeleteRow(parked: Boolean, vm: GarageViewModel) {
+    var asking by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(18.dp)
+    Row(
+        Modifier.fillMaxWidth().height(72.dp).alpha(if (parked) 1f else 0.4f).clip(shape).border(1.dp, Rule, shape)
+            .clickable(enabled = parked, role = Role.Button) { asking = true }.padding(horizontal = 24.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("내 목소리 녹음 모두 지우기", Modifier.weight(1f), color = Alert, fontSize = 24.sp)
+    }
+    if (asking) {
+        AlertDialog(
+            onDismissRequest = { asking = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    asking = false
+                    vm.deleteVoices()
+                }) { Text("지우기", fontSize = 22.sp) }
+            },
+            dismissButton = { TextButton(onClick = { asking = false }) { Text("취소", fontSize = 22.sp) } },
+            title = { Text("내 목소리 녹음을 모두 지울까요?") },
+            text = { Text("녹음 다섯 가지가 모두 지워지고, 목소리 카드는 모두 꺼져요.") },
+        )
     }
 }
 

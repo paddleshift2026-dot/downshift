@@ -70,6 +70,7 @@ import com.downshift.app.core.garage.Part
 import com.downshift.app.core.garage.PartKind
 import com.downshift.app.core.garage.PartStatus
 import com.downshift.app.core.garage.SoundCharacter
+import com.downshift.app.core.voice.VoiceSlot
 import com.downshift.app.ui.BrandMark
 import com.downshift.app.ui.Clean
 import com.downshift.app.ui.Condensed
@@ -107,12 +108,12 @@ fun GarageScreen(vm: GarageViewModel = viewModel()) {
             if (wide) {
                 Row(Modifier.weight(1f).fillMaxWidth()) {
                     BuildColumn(ui, vm, Modifier.width(600.dp).fillMaxHeight())
-                    PartsSection(ui, vm, wide = true, Modifier.weight(1f).fillMaxHeight())
+                    PartsSection(ui, vm, wide = true, Modifier.weight(1f).fillMaxHeight()) {}
                 }
             } else {
                 Column(Modifier.weight(1f).fillMaxWidth()) {
                     BuildStrip(ui, vm)
-                    PartsSection(ui, vm, wide = false, Modifier.weight(1f).fillMaxWidth())
+                    PartsSection(ui, vm, wide = false, Modifier.weight(1f).fillMaxWidth()) {}
                 }
             }
         }
@@ -172,7 +173,11 @@ private fun BuildColumn(ui: GarageUi, vm: GarageViewModel, modifier: Modifier) {
     ) {
         Row(Modifier.fillMaxWidth().height(30.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Text("내 빌드", color = Faint, fontSize = 22.sp, fontWeight = FontWeight.Medium)
-            if (preview != null) Text("선택한 부품으로 미리보기", color = Heat, fontSize = 20.sp, fontWeight = FontWeight.Medium)
+            if (preview != null) {
+                Text("선택한 부품으로 미리보기", color = Heat, fontSize = 20.sp, fontWeight = FontWeight.Medium)
+            } else if (Garage.voicesHeard(ui.state, VoiceSlot.categories(ui.recorded)).isNotEmpty()) {
+                VoiceChip()
+            }
         }
         Plate(Garage.plate(shown), 32)
         EngineStage(ui, wide = true)
@@ -279,7 +284,7 @@ internal fun StartButton(ui: GarageUi, vm: GarageViewModel, height: Dp) {
 }
 
 @Composable
-private fun PartsSection(ui: GarageUi, vm: GarageViewModel, wide: Boolean, modifier: Modifier) {
+private fun PartsSection(ui: GarageUi, vm: GarageViewModel, wide: Boolean, modifier: Modifier, onRecord: (VoiceSlot) -> Unit) {
     Column(modifier) {
         Tabs(ui.tab, wide, vm::selectTab)
         Box(
@@ -289,7 +294,8 @@ private fun PartsSection(ui: GarageUi, vm: GarageViewModel, wide: Boolean, modif
             val category = ui.tab.category
             if (category == null) TuneTab(ui, vm) else PartsGrid(ui, category, wide, vm)
         }
-        ActionBar(ui, wide, vm)
+        val category = ui.tab.category
+        if (category != null && ui.voicePicked) VoiceActionBar(ui, category, wide, vm, onRecord) else ActionBar(ui, wide, vm)
     }
 }
 
@@ -323,15 +329,20 @@ private fun Tabs(tab: GarageTab, wide: Boolean, onPick: (GarageTab) -> Unit) {
 private fun PartsGrid(ui: GarageUi, category: Category, wide: Boolean, vm: GarageViewModel) {
     val cols = if (wide) 2 else 1
     val gap = if (wide) 20.dp else 12.dp
+    val cards: List<Part?> = Catalog.of(category) + null // null: the voice card, last
     Column(verticalArrangement = Arrangement.spacedBy(gap)) {
-        Catalog.of(category).chunked(cols).forEach { row ->
+        cards.chunked(cols).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
                 row.forEach { p ->
-                    PartCard(
-                        part = p, status = Garage.status(ui.state, p), balance = ui.state.balance,
-                        selected = ui.selected[category] == p.id, playing = ui.playing == p.id, canPreview = ui.parked && ui.ready,
-                        wide = wide, onPick = { vm.selectPart(p.id) }, onPlay = { vm.preview(p.id) }, modifier = Modifier.weight(1f),
-                    )
+                    if (p == null) {
+                        VoiceCard(ui, category, wide, vm, Modifier.weight(1f))
+                    } else {
+                        PartCard(
+                            part = p, status = Garage.status(ui.state, p), balance = ui.state.balance,
+                            selected = ui.selected[category] == p.id, playing = ui.playing == p.id, canPreview = ui.parked && ui.ready,
+                            wide = wide, onPick = { vm.selectPart(p.id) }, onPlay = { vm.preview(p.id) }, modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
                 repeat(cols - row.size) { Spacer(Modifier.weight(1f)) }
             }
@@ -477,6 +488,7 @@ internal object GarageIcons {
     val Bars = icon(2.6f, "M6 17v-6", "M10 17V7", "M14 17V9", "M18 17v-4")
     val Rotate = icon(2f, "M20 12a8 8 0 1 1-2.3-5.6", "M20 4v4h-4")
     val Power = icon(2.4f, "M12 3v8", "M6.4 6.6a8 8 0 1 0 11.2 0")
+    val Mic = icon(2.2f, "M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z", "M5.5 11a6.5 6.5 0 0 0 13 0", "M12 17.5V21")
     val Play = ImageVector.Builder(defaultWidth = 24.dp, defaultHeight = 24.dp, viewportWidth = 24f, viewportHeight = 24f).apply {
         addPath(PathParser().parsePathString("M8 5.6v12.8a.8.8 0 0 0 1.2.7l10.2-6.4a.8.8 0 0 0 0-1.4L9.2 4.9A.8.8 0 0 0 8 5.6z").toNodes(), fill = SolidColor(Color.White))
     }.build()

@@ -15,6 +15,7 @@ import com.downshift.app.core.garage.GarageState
 import com.downshift.app.core.garage.Part
 import com.downshift.app.core.garage.PartKind
 import com.downshift.app.core.garage.Tune
+import com.downshift.app.core.voice.VoiceSlot
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,9 +49,14 @@ data class GarageUi(
     val packSource: String = "",
     val equipSeq: Int = 0,
     val equipCategory: Category? = null,
+    /** The voice slots that have a take (VoiceHost). */
+    val recorded: Set<VoiceSlot> = emptySet(),
 ) {
     /** The card picked in this tab, or null in the tune tab. */
     val selectedPart: Part? get() = tab.category?.let { c -> selected[c]?.let(Catalog::part) }
+
+    /** The voice card is the one picked in this tab. */
+    val voicePicked: Boolean get() = tab.category?.let { selected[it] == GarageViewModel.VOICE_ID } ?: false
 }
 
 fun fittedOf(s: GarageState): Map<Category, String> = Category.entries.associateWith { Garage.fitted(s, it) }
@@ -67,6 +73,7 @@ class GarageViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = (app as DownshiftApp).garage
     private val drive = (app as DownshiftApp).drive
     private val demo = (app as DownshiftApp).demo
+    private val voice = (app as DownshiftApp).voice
 
     private val _ui = MutableStateFlow(GarageUi())
     val ui: StateFlow<GarageUi> = _ui.asStateFlow()
@@ -79,6 +86,7 @@ class GarageViewModel(app: Application) : AndroidViewModel(app) {
         _ui.value = GarageUi(state = s, selected = fittedOf(s))
         host.setBuild(Garage.build(s))
         viewModelScope.launch { repo.state.collect { saved -> _ui.update { it.copy(state = saved) } } }
+        viewModelScope.launch { voice.recorded.collect { r -> _ui.update { it.copy(recorded = r) } } }
         // Switching wallets (demo mode) brings another garage: pick its fitted parts.
         viewModelScope.launch { repo.demo.drop(1).collect { _ui.update { it.copy(selected = fittedOf(repo.state.value), playing = null) } } }
         // The engine's situation is polled five times a second, only while the garage is on screen; unchanged
@@ -122,6 +130,30 @@ class GarageViewModel(app: Application) : AndroidViewModel(app) {
         }
         _ui.update { it.copy(playing = id) }
         host.audition(build, category) { _ui.update { if (it.playing == id) it.copy(playing = null) else it } }
+    }
+
+    fun selectVoice(category: Category) = _ui.update { it.copy(selected = it.selected + (category to VOICE_ID)) }
+
+    fun setVoiceOn(category: Category, on: Boolean) {
+        if (!host.parked) return
+        voice.setOn(category, on)
+    }
+
+    /** The tab's preview with its saved takes, heard even while the card is off; again stops it. */
+    fun previewVoice(category: Category) {
+        val id = voiceId(category)
+        val u = _ui.value
+        if (u.playing == id) {
+            host.cancelAudition()
+            return
+        }
+        if (!host.parked || VoiceSlot.of(category).none { it in u.recorded }) return
+        _ui.update { it.copy(playing = id) }
+        voice.audition(category, null) { _ui.update { if (it.playing == id) it.copy(playing = null) else it } }
+    }
+
+    fun deleteVoices() {
+        if (host.parked) voice.deleteAll()
     }
 
     fun unlock(id: String) {
@@ -205,6 +237,8 @@ class GarageViewModel(app: Application) : AndroidViewModel(app) {
 
     companion object {
         const val BUILD_PREVIEW = "build"
+        const val VOICE_ID = "voice"
+        fun voiceId(category: Category) = "voice:${category.name}"
         private const val POLL_MS = 200L
         private val DEMO_SELECTION = mapOf(Category.ENGINE to "v8", Category.INTAKE to "t3", Category.EXHAUST to "track", Category.TRANSMISSION to "mt")
         private val TABS = mapOf(
