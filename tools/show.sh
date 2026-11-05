@@ -7,7 +7,8 @@
 #   bash tools/show.sh cpu        # %CPU (one core = 100) with demo mode and the web pedal -> docs/m4/cpu.txt
 #   bash tools/show.sh background # the engine and the trip behind the navigation app -> docs/m4/background.txt
 #   bash tools/show.sh pt         # PT rehearsal scene by scene (Enter); PT_AUTO=1 straight through, PT_PEDAL=web for
-#                                 #   the revs on the web pedal, PT_VOLUME=0..45 the car volume (default 35)
+#                                 #   the revs on the web pedal, PT_VOLUME=0..45 the car volume (default 35);
+#                                 #   VOICE_DIR=docs/m5/voice_user (pt and video): the voice scene's takes, else synthetic ones
 #   bash tools/show.sh video      # a cold start and the PT flow recorded with sound (car volume 45, then 20) -> demo.webm,
 #                                 #   demo.srt (subtitles), youtube.md (title, description, chapters); then burn the
 #                                 #   subtitles in: python tools/serve_save.py . docs/m4 and open
@@ -188,56 +189,91 @@ rev() {
   post "/vehicle/controls?accelerator=$1"; sleep "$2"; post "/vehicle/controls?accelerator=0"
 }
 
-# The PT flow, about 2 min 50 s: the first-run note, garage previews, the start and revs, a drive (a signalled turn,
-# a school zone, a guidance prompt, a camera), the summary with V12 unlocked, a V12 start. Captions mark each part.
+# The PT flow, about 2 min 45 s: the first-run note, garage previews, the start and revs, a drive (a signalled turn,
+# a school zone, a guidance prompt, a camera), the summary with V12 unlocked, a V12 start, and the voice parts (a take
+# from $VOICE_DIR or the synthetic ones, already in the app's voice_in: see voice_ready). Captions mark each part.
 scenes() {
   step "1 첫 실행 안내"
-  caption "첫 실행 안내 · 엔진음은 실내 스피커로만, 내비 안내와 경고가 먼저" 11 "첫 실행 안전 안내"
-  sleep 6; tap_text "위 내용을 확인했고"; sleep 1.5; tap_text "동의하고 개러지로"; sleep 2.5
+  caption "첫 실행 안내 · 엔진음은 실내 스피커로만, 내비 안내와 경고가 먼저" 9 "첫 실행 안전 안내"
+  sleep 3; tap_text "위 내용을 확인했고"; sleep 1; tap_text "동의하고 개러지로"; sleep 2
   step "2 개러지와 미리 듣기"
-  caption "개러지 · 잠긴 부품도 P에선 미리 들어 봐요 · V8" 11 "개러지와 미리 듣기"
-  garage tab --es tab engine; sleep 1; garage preview --es part v8; sleep 9
-  caption "터보 3단 · 휘슬과 블로오프" 10
-  garage tab --es tab intake; sleep 1; garage preview --es part t3; sleep 9
-  caption "트랙 배기 · 직관 사운드를 실내에서만" 10
-  garage tab --es tab exhaust; sleep 1; garage preview --es part track; sleep 9
+  caption "개러지 · 잠긴 부품도 P에선 미리 들어 봐요 · V8" 8 "개러지와 미리 듣기"
+  garage tab --es tab engine; sleep 1; garage preview --es part v8; sleep 5
+  caption "터보 3단 · 휘슬과 블로오프" 7
+  garage tab --es tab intake; sleep 0.8; garage preview --es part t3; sleep 5
+  caption "트랙 배기 · 직관 사운드를 실내에서만" 7
+  garage tab --es tab exhaust; sleep 0.8; garage preview --es part track; sleep 5
   step "3 시동과 레브"
-  caption "시동 · START를 길게 누르면 바늘이 한 번 쓸고 공회전으로" 9 "시동과 정차 중 레브"
-  drive screen --es to start; sleep 2; hold_text "시동 걸기" 1300; sleep 4
-  caption "정차 중 레브 · 페달을 떼면 회전이 떨어지며 팝콘" 10
-  rev 70 1.2; sleep 2; rev 90 1.0; sleep 3
+  caption "시동 · START를 길게 누르면 바늘이 한 번 쓸고 공회전으로" 8 "시동과 정차 중 레브"
+  drive screen --es to start; sleep 1.5; hold_text "시동 걸기" 1300; sleep 3
+  caption "정차 중 레브 · 페달을 떼면 회전이 떨어지며 팝콘" 7
+  rev 70 1.2; sleep 1.5; rev 90 1.0; sleep 2
   step "4 주행"
   caption "기어 N · 주행 규제(DO)가 걸리면 정차 전용 화면은 잠겨요" 4 "주행 규제와 주행 화면"
   post "/vehicle/gear?gear=Neutral"; sleep 4
-  caption "기어 D · 주행 화면은 이번 주행 포인트와 엔진음 상태만, rpm·속도는 없어요" 9
-  post "/vehicle/gear?gear=Drive"; sleep 3; drive limit --ei kph 50
-  caption "가속하면 rpm이 차오르고, 페달을 떼면 팝콘, 감속하면 다운시프트 블립" 14
-  hold_speed 50 8; post "/vehicle/controls?accelerator=0"; sleep 3; post "/vehicle/controls?brake=30"; sleep 2; post "/vehicle/controls?brake=0"
-  caption "회전 30m 전부터 방향지시등을 켜면 +0.5P" 13
-  drive turn --es dir left --ei m 80; post "/vehicle/turn-signal?mode=BlinkLeft"; hold_speed 40 12; post "/vehicle/turn-signal?mode=Off"
+  caption "기어 D · 주행 화면은 이번 주행 포인트와 엔진음 상태만, rpm·속도는 없어요" 7
+  post "/vehicle/gear?gear=Drive"; sleep 2; drive limit --ei kph 50
+  caption "가속하면 rpm이 차오르고, 페달을 떼면 팝콘, 감속하면 다운시프트 블립" 10
+  hold_speed 50 6; post "/vehicle/controls?accelerator=0"; sleep 2; post "/vehicle/controls?brake=30"; sleep 1.5; post "/vehicle/controls?brake=0"
+  caption "회전 30m 전부터 방향지시등을 켜면 +0.5P" 9
+  drive turn --es dir left --ei m 80; post "/vehicle/turn-signal?mode=BlinkLeft"; hold_speed 40 8; post "/vehicle/turn-signal?mode=Off"
   # 22 km/h: hold_speed swings a few km/h either way, and the zone is kept only if it never goes over 30
-  caption "스쿨존 100m 전부터 엔진음을 줄여요" 11
-  drive school --ei m 120; hold_speed 22 10
-  caption "내비 안내가 나오면 잠시 줄여요" 5
+  caption "스쿨존 100m 전부터 엔진음을 줄여요" 8
+  drive school --ei m 120; hold_speed 22 7
+  caption "내비 안내가 나오면 잠시 줄여요" 4
   drive guide; hold_speed 22 3
-  caption "단속 카메라 앞에서 규정 속도를 지키면 +6P (시연 배속 ×20)" 13
-  drive lapse --ei value 20; hold_speed 22 3; drive camera --ei kph 50 --ei m 1500; hold_speed 45 9
+  caption "단속 카메라 앞에서 규정 속도를 지키면 +6P (시연 배속 ×20)" 10
+  drive lapse --ei value 20; hold_speed 22 2; drive camera --ei kph 50 --ei m 1200; hold_speed 45 6
   step "5 결산과 V12 해금"
-  caption "기어 P · 이번 주행 결산: 거리·제한속도·스쿨존·카메라·방향지시등 포인트" 10 "주행 결산과 V12 해금"
-  stop_car; post "/vehicle/gear?gear=Park"; sleep 8
+  caption "기어 P · 이번 주행 결산: 거리·제한속도·스쿨존·카메라·방향지시등 포인트" 8 "주행 결산과 V12 해금"
+  stop_car; post "/vehicle/gear?gear=Park"; drive lapse --ei value 1; sleep 5
   caption "포인트로 V12 해금" 8
-  tap_text "개러지에서 해금하기"; sleep 2; garage tab --es tab engine; sleep 1
-  garage unlock --es part v12; sleep 1.5; garage equip --es part v12; sleep 2; app --es cmd stop; sleep 1
+  tap_text "개러지에서 해금하기"; sleep 1.5; garage tab --es tab engine; sleep 1
+  garage unlock --es part v12; sleep 1.2; garage equip --es part v12; sleep 1.2; app --es cmd stop; sleep 1
   step "6 V12 시동"
-  caption "V12로 다시 시동 · 차 안에서만 들리는 내 엔진, Downshift" 14 "V12 시동"
-  drive screen --es to start; sleep 2; hold_text "시동 걸기" 1300; sleep 3; rev 80 1.0; sleep 3; app --es cmd stop; sleep 2
-  drive lapse --ei value 1
+  caption "V12로 다시 시동" 8 "V12 시동"
+  drive screen --es to start; sleep 1.2; hold_text "시동 걸기" 1300; sleep 1.5; rev 80 1.0; sleep 1; app --es cmd stop; sleep 0.5
+  step "7 내 목소리 파츠"
+  caption "내 목소리 파츠 · 엔진 탭 맨 끝 카드에서 녹음하기" 6 "내 목소리 파츠"
+  # the card is tapped on screen; its 녹음하기 is the same as adb voice open, which skips a two-second screen read
+  drive screen --es to garage; sleep 1; garage tab --es tab engine; sleep 0.8; tap_text "내 목소리 엔진"; sleep 0.8
+  app --es cmd voice --es action open --es slot engine; sleep 1
+  caption "안내대로 '부르르르' 2초 · 녹음은 정차 중에만, 차 안에만 저장" 7
+  app --es cmd voice --es action mic --es file engine.wav; tap_text "녹음 시작"; sleep 5.5
+  caption "내 목소리로 들어보기 · V12 구조 그대로, 소리만 내 목소리" 6
+  tap_text "들어보기"; sleep 4.5
+  caption "이걸로 쓸게요 · 휘슬·블로오프·팝·치키차도 같은 방법으로" 4
+  tap_text "이걸로 쓸게요"; sleep 0.5
+  for s in whistle blowoff pop shift; do app --es cmd voice --es action load --es slot "$s" --es file "$s.wav"; done; sleep 1
+  caption "출발하면 부아앙 — 치키차 — 부아앙 · 차 안에서만 들리는 내 엔진, Downshift" 20
+  drive screen --es to start; sleep 1.2; hold_text "시동 걸기" 1300; sleep 1.5
+  # 45% to about 38 km/h shifts up once, a light pedal once more, a short kick down twice with boost, then lifting off
+  # pops and blows off: every voice in under 50 km/h (V12 shift points: ShiftSchedule)
+  post "/vehicle/gear?gear=Drive"; sleep 0.8; post "/vehicle/controls?accelerator=45"; sleep 5
+  post "/vehicle/controls?accelerator=10"; sleep 1.5; post "/vehicle/controls?accelerator=90"; sleep 1.2
+  post "/vehicle/controls?accelerator=0"; sleep 1.5; stop_car; post "/vehicle/gear?gear=Park"; sleep 1; app --es cmd stop
+}
+
+# Scene 7's takes: $VOICE_DIR's five WAVs (the user's, exported from a debug build) or the synthetic ones, into the
+# app's voice_in; every voice card off and no take saved, so the scene records from scratch; the microphone granted.
+voice_ready() {
+  app --es cmd voice --es action clear; sleep 1
+  if [ -n "${VOICE_DIR:-}" ]; then
+    "$ADB" shell "run-as $PKG --user 10 mkdir -p files/voice_in" < /dev/null
+    for f in engine whistle blowoff pop shift; do
+      "$ADB" exec-in "run-as $PKG --user 10 sh -c 'cat > files/voice_in/$f.wav'" < "$VOICE_DIR/$f.wav"
+    done
+  else
+    push_samples
+  fi
+  "$ADB" shell pm grant --user 10 "$PKG" android.permission.RECORD_AUDIO < /dev/null
 }
 
 pt() {
   echo "PT rehearsal; PT_AUTO=1 runs straight through, PT_PEDAL=web leaves the revs to the web pedal"
   setup "${PT_VOLUME:-35}"
   demo_mode on "${PT_BUTTONS:-off}"; drive lapse --ei value 1
+  voice_ready
   drive screen --es to safety; sleep 2
   "$ADB" logcat -c
   REC_T0="$(date +%s%3N)"; SRT=/dev/null
@@ -261,6 +297,7 @@ youtube() {
 Downshift는 법규를 지키며 달려 모은 포인트로 가상 엔진을 조립·튜닝하고, 내 페달에 반응하는 그 엔진 소리를 차 실내 스피커로만 듣는 Pleos Connect 앱입니다.
 Pleos Connect Emulator v2.1.0에서 실제로 돌린 화면과 소리입니다. 기어·페달·좌석은 Virtual Console로 바꾸고, 에뮬레이터 내비가 보내지 않는 제한속도·스쿨존·단속 카메라는 시연 모드에서 넣었습니다.
 주행 중에는 주의 분산 최적화(DO) 규칙에 맞춘 주행 화면만 보이고, 주행 규제(CarUxRestrictions)가 걸리면 개러지 같은 정차 전용 화면은 잠깁니다. 결산의 포인트는 시연 지갑의 포인트이고, 카메라 구간부터는 시연 배속 ×20으로 센 거리입니다.
+마지막 장면은 내 목소리 파츠입니다. 정차 중에 녹음한 "부르르르"가 장착한 V12의 점화 순서대로 엔진음이 되고, "치키차"는 기어가 바뀔 때마다 납니다. 녹음은 차 안에만 저장합니다. 영상의 녹음은 에뮬레이터 가상 마이크(PC 마이크)로 미리 녹음한 파일을 같은 녹음 창에 넣은 것입니다.
 
 ## 챕터
 
@@ -292,6 +329,7 @@ video() {
   echo "the PT flow with sound -> docs/m4/demo.webm, demo.srt, youtube.md"
   setup 45
   demo_mode on off; drive lapse --ei value 1
+  voice_ready
   SRT="$OUT/demo.srt"; : > "$SRT"; CUE=0; CHAPTERS=""
   # A cold start on camera for the team wordmark; the flow goes to the safety note while the wordmark is up.
   "$ADB" shell am force-stop "$PKG" < /dev/null; sleep 2

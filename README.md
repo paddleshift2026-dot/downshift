@@ -40,9 +40,10 @@ adb shell am start -n com.downshift.app/.MainActivity     # 처음 열 때 차�
 | 4 주행 | 기어 N 잠금 화면, 주행 화면, 가속 → 팝콘 → 다운시프트 블립, 지시등 켠 회전, 스쿨존 조용 모드, 안내 음성 |
 | 5 결산 | 항목별 포인트, 포인트로 V12 해금 |
 | 6 V12 | V12로 다시 시동 |
+| 7 내 목소리 | 엔진 탭 맨 끝 카드에서 "부르르르" 녹음 → 점검 → 들어보기 → 저장, 휘슬·블로오프·팝·치키차도 넣고 출발하면 부아앙 — 치키차 — 부아앙 |
 
 ```bash
-bash tools/show.sh pt        # 장면마다 Enter (PT_AUTO=1 이면 한 번에, PT_PEDAL=web 이면 레브를 웹 페달에 맡김)
+bash tools/show.sh pt        # 장면마다 Enter (PT_AUTO=1 이면 한 번에, PT_PEDAL=web 이면 레브를 웹 페달에 맡김, VOICE_DIR=폴더 이면 그 녹음으로)
 bash tools/show.sh video     # 같은 흐름을 소리와 함께 녹화 -> docs/m4/demo.webm, 자막 demo.srt, youtube.md
 python tools/serve_save.py . docs/m4   # 그다음 브라우저로 http://127.0.0.1:8799/tools/caption_burn.html -> 자막을 입힌 demo_captioned.webm (?size=720 이면 휴대폰용 23MB)
 ```
