@@ -6,8 +6,10 @@ import com.downshift.app.core.model.FuelKind
 import com.downshift.app.core.powertrain.PowertrainEvent
 import com.downshift.app.core.powertrain.PowertrainState
 import com.downshift.app.core.synth.PulseDrive
+import com.downshift.app.core.voice.VoiceKit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -132,4 +134,66 @@ class SoundDirectorTest {
 
     @Test
     fun aProceduralStartNeedsNoOneShot() = assertTrue(pulsePlan(state(300.0, 0.0), listOf(PowertrainEvent.STARTUP)).shots.isEmpty())
+
+    private val turbo = InductionStep(InductionState(0.8, 4000.0, 0.4, 0.0, 0.0), blowOff = true)
+    private val pop = Pop(0.6, 20.0, 3000.0)
+
+    private fun voiced(use: VoiceUse, events: List<PowertrainEvent> = emptyList(), induction: InductionStep = InductionStep.NONE,
+                       pops: List<Pop> = emptyList(), build: Build = Build()): SoundPlan {
+        val d = SoundDirector(voicing, procedural = true, seed = 1).apply { voice = use }
+        return d.plan(state(3000.0, 0.5), events, induction, pops, build, FuelKind.EV)
+    }
+
+    @Test
+    fun withNoVoicesThePlanIsAsBefore() {
+        val p = SoundDirector(voicing, procedural = true)
+            .plan(state(3000.0, 0.5), listOf(PowertrainEvent.SHIFT_UP), turbo, listOf(pop), Build(transmission = TransmissionPart.DCT), FuelKind.EV)
+        assertTrue(p.voiceShots.isEmpty())
+        assertNull(p.voiceWhistle)
+        assertTrue(p.blowOff)
+        assertEquals(0.4, p.synth.whistleGain, 1e-9)
+        assertEquals(3, p.pops.size) // the overrun pop and DCT's two
+    }
+
+    @Test
+    fun aVoicedWhistleReplacesTheToneAndFollowsTheBoost() {
+        val p = voiced(VoiceUse(whistle = true), induction = turbo)
+        assertEquals(0.0, p.synth.whistleGain, 1e-9)
+        assertEquals(4000.0 / 3000.0, p.voiceWhistle!!.rate, 1e-9)
+        assertEquals(0.4, p.voiceWhistle!!.gain, 1e-9)
+    }
+
+    @Test
+    fun aSuperchargerWhineBecomesTheWhistleLoopToo() {
+        val sc = InductionStep(InductionState(0.3, 0.0, 0.0, 540.0, 0.3), blowOff = false)
+        val p = voiced(VoiceUse(whistle = true), induction = sc)
+        assertEquals(0.0, p.synth.whineGain, 1e-9)
+        assertEquals(0.9, p.voiceWhistle!!.rate, 1e-9)
+    }
+
+    @Test
+    fun aVoicedBlowOffIsPlayedOnce() {
+        val p = voiced(VoiceUse(blowOff = true), induction = turbo)
+        assertFalse(p.blowOff)
+        assertEquals(listOf(VoiceKit.BLOW_OFF), p.voiceShots.map { it.clip })
+    }
+
+    @Test
+    fun voicedPopsVaryInPitch() {
+        val p = voiced(VoiceUse(pop = true), pops = List(20) { pop })
+        assertTrue(p.pops.isEmpty())
+        assertEquals(20, p.voiceShots.count { it.clip == VoiceKit.POP })
+        assertTrue(p.voiceShots.all { it.rate in 0.85..1.15 })
+        assertTrue(p.voiceShots.map { it.rate }.distinct().size > 1)
+    }
+
+    @Test
+    fun aVoicedShiftPlaysOnEveryGearChangeInsteadOfTheGearboxPops() {
+        val up = voiced(VoiceUse(shift = true), listOf(PowertrainEvent.SHIFT_UP), build = Build(transmission = TransmissionPart.DCT))
+        assertEquals(listOf(1.0), up.voiceShots.filter { it.clip == VoiceKit.SHIFT }.map { it.rate })
+        assertTrue(up.pops.isEmpty())
+        val down = voiced(VoiceUse(shift = true), listOf(PowertrainEvent.SHIFT_DOWN), build = Build(transmission = TransmissionPart.MT_BLIP))
+        assertEquals(listOf(0.9), down.voiceShots.map { it.rate })
+        assertTrue(down.pops.isEmpty())
+    }
 }

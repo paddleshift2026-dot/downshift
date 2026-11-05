@@ -7,10 +7,19 @@ import com.downshift.app.core.model.FuelKind
 import com.downshift.app.core.powertrain.PowertrainEvent
 import com.downshift.app.core.powertrain.PowertrainState
 import com.downshift.app.core.synth.PulseDrive
+import com.downshift.app.core.voice.VoiceKit
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
+import kotlin.random.Random
+
+/** Which of the user's sounds replace the synthetic ones (spec 6.3); the engine's own grains live in EngineVoice. */
+data class VoiceUse(val whistle: Boolean = false, val blowOff: Boolean = false, val pop: Boolean = false, val shift: Boolean = false) {
+    companion object {
+        val NONE = VoiceUse()
+    }
+}
 
 /**
  * Turns the powertrain state into a SoundPlan: two neighbouring on-load loops and two off-load loops,
@@ -18,7 +27,11 @@ import kotlin.math.sqrt
  * A procedural engine has no loops: the plan drives the real-time pulse voice instead, which also makes
  * the cranking, the limiter's stutter and the spin-down after a stop itself.
  */
-class SoundDirector(var voicing: Voicing, var procedural: Boolean = false) {
+class SoundDirector(var voicing: Voicing, var procedural: Boolean = false, seed: Long = DEFAULT_SEED) {
+    /** The user's sounds in use; NONE keeps every plan as it was. */
+    var voice: VoiceUse = VoiceUse.NONE
+    private val random = Random(seed)
+
     fun plan(state: PowertrainState, events: List<PowertrainEvent>, induction: InductionStep, pops: List<Pop>, build: Build, fuel: FuelKind): SoundPlan {
         val v = voicing
         val level = build.volume.coerceIn(0.0, 1.0) * fuelGain(fuel)
@@ -43,7 +56,7 @@ class SoundDirector(var voicing: Voicing, var procedural: Boolean = false) {
         val s = induction.state
         val loudness = BASE_LOUDNESS + LOAD_LOUDNESS * state.load + RPM_LOUDNESS * rpmNorm(state.rpm)
         val synth = SynthVoices(s.whistleHz, s.whistleGain, s.whineHz, s.whineGain)
-        return SoundPlan(loops, shots, shiftPops(pops, events, build), induction.blowOff, synth, build.exhaust, level, loudness)
+        return voiced(SoundPlan(loops, shots, emptyList(), induction.blowOff, synth, build.exhaust, level, loudness), pops, events, induction, build)
     }
 
     private fun pulsePlan(state: PowertrainState, events: List<PowertrainEvent>, induction: InductionStep, pops: List<Pop>, build: Build, level: Double): SoundPlan {
@@ -62,18 +75,54 @@ class SoundDirector(var voicing: Voicing, var procedural: Boolean = false) {
         val drive = PulseDrive(state.rpm, maxOf(state.load, flare), combustion = !state.cranking && !state.fuelCut, cranking = state.cranking)
         val s = induction.state
         val synth = SynthVoices(s.whistleHz, s.whistleGain, s.whineHz, s.whineGain)
-        return SoundPlan(emptyList(), emptyList(), shiftPops(pops, events, build), induction.blowOff, synth, build.exhaust, level, 1.0, drive)
+        return voiced(SoundPlan(emptyList(), emptyList(), emptyList(), induction.blowOff, synth, build.exhaust, level, 1.0, drive), pops, events, induction, build)
     }
 
-    private fun shiftPops(pops: List<Pop>, events: List<PowertrainEvent>, build: Build): List<Pop> {
-        val all = ArrayList<Pop>(pops.size + 2)
-        all.addAll(pops)
-        if (build.transmission == TransmissionPart.DCT && PowertrainEvent.SHIFT_UP in events) {
-            all += DCT_POP
-            all += DCT_POP
+    /**
+     * A running plan's pops, blow-off and induction voices, with the user's takes standing in where [voice] says so
+     * (spec 6.3): overrun pops at a random rate in 0.85..1.15, the blow-off once, a gear change at 1.0 up and 0.9 down
+     * instead of the gearbox's own pops, and the whistle (or the supercharger whine) as a loop following its pitch.
+     */
+    private fun voiced(base: SoundPlan, overrun: List<Pop>, events: List<PowertrainEvent>, induction: InductionStep, build: Build): SoundPlan {
+        val v = voice
+        val pops = ArrayList<Pop>(overrun.size + 2)
+        val shots = ArrayList<OneShot>(2)
+        if (v.pop) {
+            for (p in overrun) shots += OneShot(VoiceKit.POP, p.gain, POP_RATE_LOW + (POP_RATE_HIGH - POP_RATE_LOW) * random.nextDouble())
+        } else {
+            pops.addAll(overrun)
         }
-        if (build.transmission == TransmissionPart.MT_BLIP && PowertrainEvent.SHIFT_DOWN in events) all += BLIP_POP
-        return all
+        if (v.shift) {
+            if (PowertrainEvent.SHIFT_UP in events) shots += OneShot(VoiceKit.SHIFT, 1.0)
+            if (PowertrainEvent.SHIFT_DOWN in events) shots += OneShot(VoiceKit.SHIFT, 1.0, SHIFT_DOWN_RATE)
+        } else {
+            addGearPops(pops, events, build)
+        }
+        var blowOff = base.blowOff
+        if (v.blowOff && blowOff) {
+            shots += OneShot(VoiceKit.BLOW_OFF, 1.0)
+            blowOff = false
+        }
+        var synth = base.synth
+        var loop: VoiceLoop? = null
+        if (v.whistle) {
+            val s = induction.state
+            loop = when {
+                s.whistleGain > 0 -> VoiceLoop((s.whistleHz / WHISTLE_REF_HZ).coerceIn(MIN_LOOP_RATE, MAX_LOOP_RATE), s.whistleGain)
+                s.whineGain > 0 -> VoiceLoop((s.whineHz / WHINE_REF_HZ).coerceIn(MIN_LOOP_RATE, MAX_LOOP_RATE), s.whineGain)
+                else -> null
+            }
+            synth = SynthVoices.SILENT
+        }
+        return base.copy(pops = pops, blowOff = blowOff, synth = synth, voiceShots = shots, voiceWhistle = loop)
+    }
+
+    private fun addGearPops(out: MutableList<Pop>, events: List<PowertrainEvent>, build: Build) {
+        if (build.transmission == TransmissionPart.DCT && PowertrainEvent.SHIFT_UP in events) {
+            out += DCT_POP
+            out += DCT_POP
+        }
+        if (build.transmission == TransmissionPart.MT_BLIP && PowertrainEvent.SHIFT_DOWN in events) out += BLIP_POP
     }
 
     /** 0 at idle, 1 at the top recorded band. */
@@ -120,6 +169,14 @@ class SoundDirector(var voicing: Voicing, var procedural: Boolean = false) {
         private const val FLARE_SPAN = 0.6
         private val DCT_POP = Pop(0.7, 8.0, 3500.0)
         private val BLIP_POP = Pop(0.5, 6.0, 3000.0)
+        private const val DEFAULT_SEED = 11L
+        private const val WHISTLE_REF_HZ = 3000.0
+        private const val WHINE_REF_HZ = 600.0
+        private const val MIN_LOOP_RATE = 0.6
+        private const val MAX_LOOP_RATE = 2.0
+        private const val POP_RATE_LOW = 0.85
+        private const val POP_RATE_HIGH = 1.15
+        private const val SHIFT_DOWN_RATE = 0.9
 
         /** Combustion cars already make their own noise, so they get the quietest baseline; EVs the fullest. */
         fun fuelGain(fuel: FuelKind): Double = when (fuel) {

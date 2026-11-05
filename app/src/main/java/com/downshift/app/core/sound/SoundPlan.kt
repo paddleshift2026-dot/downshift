@@ -19,8 +19,11 @@ data class Voicing(
 /** A looping clip played at rate (1.0 = as recorded). */
 data class LoopVoice(val clip: String, val rate: Double, val gain: Double)
 
-/** A clip played once from the start; it keeps playing through later plans and carries its own gain. */
-data class OneShot(val clip: String, val gain: Double)
+/** A clip played once from the start at rate (1.0 = as recorded); it keeps playing through later plans and carries its own gain. */
+data class OneShot(val clip: String, val gain: Double, val rate: Double = 1.0)
+
+/** The user's whistle loop (spec 6.3): rate 1.0 = as recorded, gain like the synthetic whistle's. */
+data class VoiceLoop(val rate: Double, val gain: Double)
 
 data class SynthVoices(val whistleHz: Double, val whistleGain: Double, val whineHz: Double, val whineGain: Double) {
     companion object {
@@ -43,6 +46,10 @@ data class SoundPlan(
     val master: Double,
     val loudness: Double,
     val pulse: PulseDrive? = null,
+    /** The user's one-shots (blow-off, pops, shifts): after the exhaust chain, under master like the induction voices. */
+    val voiceShots: List<OneShot> = emptyList(),
+    /** The user's whistle loop in place of the synthetic whistle or whine. */
+    val voiceWhistle: VoiceLoop? = null,
 ) {
     companion object {
         val SILENT = SoundPlan(emptyList(), emptyList(), emptyList(), false, SynthVoices.SILENT, ExhaustPart.STOCK, 0.0, 0.0)
