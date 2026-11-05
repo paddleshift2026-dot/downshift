@@ -8,8 +8,10 @@ import com.downshift.app.core.sound.OneShot
 import com.downshift.app.core.sound.Pop
 import com.downshift.app.core.sound.SoundPlan
 import com.downshift.app.core.sound.SynthVoices
+import com.downshift.app.core.sound.VoiceLoop
 import com.downshift.app.core.synth.EngineVoice
 import com.downshift.app.core.synth.PulseDrive
+import com.downshift.app.core.voice.VoiceKit
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -144,5 +146,52 @@ class EngineMixerTest {
     @Test
     fun unknownClipsAreIgnored() {
         assertTrue(EngineMixer(fs, emptyMap()).renderSeconds(plan(1.0), 0.05).all { it == 0f })
+    }
+
+    private fun quiet(master: Double = 1.0, voiceShots: List<OneShot> = emptyList(), whistle: VoiceLoop? = null) =
+        SoundPlan(emptyList(), emptyList(), emptyList(), false, SynthVoices.SILENT, ExhaustPart.STOCK, master, 1.0, voiceShots = voiceShots, voiceWhistle = whistle)
+
+    @Test
+    fun aVoiceShotPlaysOnceAtItsRate() {
+        val m = EngineMixer(fs, emptyMap())
+        m.setVoiceClips(mapOf(VoiceKit.POP to FloatArray(441) { 0.5f }))
+        val warm = FloatArray(1024)
+        m.render(quiet(), warm, warm.size) // the master ramps up in the first block
+        val out = FloatArray(4410)
+        m.render(quiet(voiceShots = listOf(OneShot(VoiceKit.POP, 1.0, rate = 2.0))), out, out.size)
+        assertEquals(221.0, out.count { abs(it) > 1e-4 }.toDouble(), 3.0) // 441 samples at double speed
+    }
+
+    @Test
+    fun voiceShotsFollowTheMaster() {
+        fun level(master: Double): Double {
+            val m = EngineMixer(fs, emptyMap())
+            m.setVoiceClips(mapOf(VoiceKit.SHIFT to FloatArray(2000) { 0.3f }))
+            val out = FloatArray(1024)
+            m.render(quiet(master), out, out.size)
+            m.render(quiet(master, listOf(OneShot(VoiceKit.SHIFT, 1.0))), out, out.size)
+            return out.maxOf { abs(it) }.toDouble()
+        }
+        assertEquals(0.25, level(0.25) / level(1.0), 0.02)
+    }
+
+    @Test
+    fun theVoiceWhistleLoopsWhileAskedAndFadesAfter() {
+        val m = EngineMixer(fs, emptyMap())
+        m.setVoiceClips(mapOf(VoiceKit.WHISTLE to sine))
+        val on = FloatArray(2048)
+        repeat(3) { m.render(quiet(whistle = VoiceLoop(1.0, 1.0)), on, on.size) }
+        assertTrue(on.maxOf { abs(it) } > 1e-3)
+        val off = FloatArray(2048)
+        repeat(3) { m.render(quiet(), off, off.size) }
+        assertEquals(0f, off.maxOf { abs(it) }, 1e-6f)
+    }
+
+    @Test
+    fun withoutVoiceClipsVoiceShotsAreSilent() {
+        val m = EngineMixer(fs, emptyMap())
+        val out = FloatArray(2048)
+        repeat(2) { m.render(quiet(voiceShots = listOf(OneShot(VoiceKit.POP, 1.0))), out, out.size) }
+        assertEquals(0f, out.maxOf { abs(it) }, 1e-6f)
     }
 }

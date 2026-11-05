@@ -7,6 +7,7 @@ import com.downshift.app.core.sound.Pop
 import com.downshift.app.core.sound.SoundPlan
 import com.downshift.app.core.synth.EngineVoice
 import com.downshift.app.core.synth.PulseDrive
+import com.downshift.app.core.voice.VoiceKit
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.exp
@@ -17,7 +18,7 @@ import kotlin.math.tan
  * Renders SoundPlans block by block. Every clip has a persistent loop voice (its phase carries on), gains ramp
  * across each block, and the exhaust part is a filter chain that crossfades when it changes.
  *
- * Signal flow: (loops + pops) × master + one-shots → exhaust chain → + induction × master → limiter.
+ * Signal flow: (loops + pops) × master + one-shots → exhaust chain → + induction × master + the user's voices × master → limiter.
  * Clips recorded at clipRate are resampled to the output sampleRate (devices often run at 48 kHz, packs at 44.1 kHz).
  * Buffers and voices are allocated up front; render does not allocate unless the exhaust part changes
  * or a block is longer than any before it.
@@ -54,6 +55,10 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
     private val blowOffFilter = Svf().apply { tune(fs, BLOW_OFF_HZ, BLOW_OFF_Q) }
     private val blowOffDecay = exp(-1.0 / (BLOW_OFF_TAU * fs)).toFloat()
     private var blowOffEnv = 0f
+    private var voiceClips: Map<String, FloatArray> = emptyMap()
+    private var voiceLoop: LoopResampler? = null
+    private val voiceLoopGain = GainRamp(0f)
+    private val voiceShots = Array(MAX_VOICE_SHOTS) { ShotVoice() }
 
     init {
         setClips(clips, clipRate)
@@ -76,8 +81,16 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
         pulseVoice = voice
     }
 
+    /** The user's sounds (VoiceKit names, at the output rate); empty turns them off. Voice one-shots playing stop. */
+    fun setVoiceClips(clips: Map<String, FloatArray>) {
+        voiceClips = clips
+        voiceLoop = clips[VoiceKit.WHISTLE]?.takeIf { it.size >= 2 }?.let { LoopResampler(it) }
+        voiceLoopGain.rampTo(0f, 0)
+        for (s in voiceShots) s.clip = null
+    }
+
     /** A one-shot (startup, engine off, limiter) is still playing out. */
-    val shotsPlaying: Boolean get() = shots.any { it.clip != null }
+    val shotsPlaying: Boolean get() = shots.any { it.clip != null } || voiceShots.any { it.clip != null }
 
     fun render(plan: SoundPlan, out: FloatArray, frames: Int) {
         ensureCapacity(frames)
@@ -100,6 +113,7 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
         renderShots(frames)
         applyExhaust(plan.exhaust, frames)
         renderInduction(plan, frames)
+        renderVoices(plan, frames)
         for (i in 0 until frames) out[i] = limit(bus[i])
     }
 
@@ -256,6 +270,43 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
         }
     }
 
+    /** The user's whistle loop and one-shots (spec 6.3): after the exhaust chain, under master like the induction voices. */
+    private fun renderVoices(plan: SoundPlan, frames: Int) {
+        val vw = plan.voiceWhistle
+        val loop = voiceLoop
+        if (loop != null) {
+            voiceLoopGain.rampTo(((vw?.gain ?: 0.0) * VOICE_LOOP_LEVEL).toFloat(), frames)
+            if (vw != null) loop.rate = vw.rate
+            if (vw != null || voiceLoopGain.value > 0f) {
+                loop.render(scratch, frames, 0)
+                for (i in 0 until frames) bus[i] += scratch[i] * voiceLoopGain.next() * masterBuf[i]
+            }
+        }
+        for (s in plan.voiceShots) {
+            val clip = voiceClips[s.clip] ?: continue
+            val slot = voiceShots.firstOrNull { it.clip == null } ?: voiceShots.maxBy { it.pos }
+            slot.clip = clip
+            slot.pos = 0.0
+            slot.gain = (s.gain * VOICE_SHOT_LEVEL).toFloat()
+            slot.step = s.rate
+        }
+        for (v in voiceShots) {
+            val clip = v.clip ?: continue
+            val last = clip.size - 1
+            var i = 0
+            while (i < frames) {
+                val i0 = v.pos.toInt()
+                if (i0 > last) break
+                val a = clip[i0]
+                val b = if (i0 < last) clip[i0 + 1] else a
+                bus[i] += (a + (b - a) * (v.pos - i0).toFloat()) * v.gain * masterBuf[i]
+                v.pos += v.step
+                i++
+            }
+            if (v.pos.toInt() > last) v.clip = null
+        }
+    }
+
     private fun ensureCapacity(frames: Int) {
         if (bus.size >= frames) return
         bus = FloatArray(frames)
@@ -276,6 +327,7 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
         var clip: FloatArray? = null
         var pos = 0.0
         var gain = 0f
+        var step = 1.0 // the user's one-shots only; the pack's play at clipStep
     }
 
     private class PopVoice {
@@ -341,5 +393,9 @@ class EngineMixer(sampleRate: Int, clips: Map<String, FloatArray>, seed: Long = 
         const val BLOW_OFF_TAU = 0.1
         const val BLOW_OFF_LEVEL = 0.25f
         const val BLOW_OFF_FLOOR = 1e-4f
+        const val MAX_VOICE_SHOTS = 8
+        // The user's sounds are the point of the voice parts, so they sit well above the subtle synthetic induction.
+        const val VOICE_LOOP_LEVEL = 0.35
+        const val VOICE_SHOT_LEVEL = 0.6
     }
 }
