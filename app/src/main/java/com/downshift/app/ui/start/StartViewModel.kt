@@ -41,6 +41,8 @@ data class StartUi(
     val variant: String = "i4",
     val fullScale: Int = 8000,
     val redline: Float = 0.85f,
+    /** A voice card is heard (shown as the "내 목소리" chip over the plate: the engine line is too long for V12). */
+    val voiced: Boolean = false,
 )
 
 /**
@@ -113,12 +115,13 @@ class StartViewModel(app: Application) : AndroidViewModel(app) {
             "v12t" -> " · 트윈 터보"
             else -> ""
         }
-        val voiced = if (Garage.voicesHeard(s, VoiceSlot.categories(recorded)).isNotEmpty()) " · 내 목소리" else ""
+        val voiced = Garage.voicesHeard(s, VoiceSlot.categories(recorded)).isNotEmpty()
         val redline = spec.redlineRpm + s.tune.redlineOffset
         val full = if (redline > 7_500) 9_000 else 8_000
         return u.copy(
             plate = Garage.plate(Garage.build(s)),
-            engineLine = "${engineLabel(engine)} · 점화 순서 ${spec.firingOrder}$extra$voiced",
+            engineLine = "${engineLabel(engine)} · 점화 순서 ${spec.firingOrder}$extra",
+            voiced = voiced,
             variant = Turntable.variant(s.engine, s.intake),
             fullScale = full,
             redline = (redline / full).toFloat(),

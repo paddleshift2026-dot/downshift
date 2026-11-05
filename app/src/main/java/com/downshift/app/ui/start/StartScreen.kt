@@ -82,6 +82,7 @@ import com.downshift.app.ui.ScreenHeader
 import com.downshift.app.ui.Sheet
 import com.downshift.app.ui.Slate
 import com.downshift.app.ui.garage.Plate
+import com.downshift.app.ui.garage.VoiceChip
 import com.downshift.app.ui.garage.dashedBorder
 import com.downshift.app.ui.garage.points
 import com.downshift.app.ui.garage.rememberAssetImage
@@ -219,6 +220,7 @@ private fun Controls(ui: StartUi, vm: StartViewModel) {
         else -> "START를 길게 눌러 시동을 걸어요"
     }
     Column(Modifier.width(560.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        if (ui.voiced) VoiceChip()
         Plate(ui.plate, 28)
         Text(ui.engineLine, color = Faint, fontSize = 20.sp, maxLines = 1)
         Text(status, Modifier.height(34.dp).semantics { liveRegion = LiveRegionMode.Polite }, color = Muted, fontSize = 24.sp)
