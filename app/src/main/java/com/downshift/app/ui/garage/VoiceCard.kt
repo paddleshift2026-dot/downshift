@@ -58,11 +58,12 @@ internal fun voiceTab(c: Category) = when (c) {
     Category.TRANSMISSION -> "변속기"
 }
 
+// One line each, like the part cards' (Korean wraps at any syllable, so a longer line leaves one alone below).
 private fun voiceDesc(c: Category, intake: IntakePart) = when (c) {
-    Category.ENGINE -> "내 목소리로 엔진 소리를 만들어요"
-    Category.INTAKE -> if (intake == IntakePart.NA) "터보나 슈퍼차저를 장착하면 들려요" else "터보 휘슬과 블로오프를 내 목소리로"
-    Category.EXHAUST -> "감속할 때 터지는 팝을 내 목소리로"
-    Category.TRANSMISSION -> "기어가 바뀔 때마다 내 목소리 변속음"
+    Category.ENGINE -> "엔진 소리를 내 목소리로"
+    Category.INTAKE -> if (intake == IntakePart.NA) "터보나 슈퍼차저를 달면 들려요" else "휘슬과 블로오프를 내 목소리로"
+    Category.EXHAUST -> "감속할 때 팝을 내 목소리로"
+    Category.TRANSMISSION -> "변속할 때마다 내 목소리로"
 }
 
 /** Spec 4: nothing recorded, recorded but off, or on (on needs a take). */
