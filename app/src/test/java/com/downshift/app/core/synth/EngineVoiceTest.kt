@@ -10,6 +10,7 @@ import org.junit.Test
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 class EngineVoiceTest {
@@ -134,5 +135,41 @@ class EngineVoiceTest {
         val seam = abs(after[0] - before.last())
         assertTrue("seam $seam", seam < 2 * maxStep(before, fs / 4) + 1e-3f)
         assertTrue(maxStep(after, 1, 2048) < 2 * maxStep(before, fs / 4) + 1e-3f)
+    }
+
+    private fun burst(hz: Double, ms: Double = 30.0): FloatArray {
+        val n = (ms * fs / 1000).toInt()
+        return FloatArray(n) { i -> (sin(2 * PI * hz * i / fs) * (0.5 - 0.5 * cos(2 * PI * i / (n - 1)))).toFloat() }
+    }
+
+    @Test
+    fun grainsFireAsOftenAsPulses() {
+        val idle = PulseDrive(900.0, 0.2, combustion = true, cranking = false)
+        val pulse = voice().apply { play(1.0, idle) }
+        val grain = voice().apply { setGrains(listOf(burst(300.0))); play(1.0, idle) }
+        assertEquals(pulse.fired, grain.fired)
+    }
+
+    @Test
+    fun grainsMakeSoundAndDifferFromThePulse() {
+        val drive = PulseDrive(2500.0, 0.6, combustion = true, cranking = false)
+        val a = voice().play(1.0, drive)
+        val b = voice().apply { setGrains(listOf(burst(300.0))) }.play(1.0, drive)
+        assertTrue(rms(b, fs / 2) > 1e-3)
+        assertTrue(a.indices.any { abs(a[it] - b[it]) > 1e-3 })
+    }
+
+    @Test
+    fun theFourGrainsTakeTurns() {
+        val v = voice().apply { setGrains(List(4) { burst(300.0 + 200 * it) }) }
+        v.play(0.5, PulseDrive(900.0, 0.2, combustion = true, cranking = false))
+        assertEquals(4, v.grainsUsed)
+    }
+
+    @Test
+    fun withoutGrainsItIsThePulseAgain() {
+        val v = voice().apply { setGrains(listOf(burst(300.0))); setGrains(null) }
+        assertEquals(0, v.grainsUsed)
+        assertTrue(rms(v.play(1.0, PulseDrive(1500.0, 0.5, combustion = true, cranking = false)), fs / 2) > 1e-3)
     }
 }

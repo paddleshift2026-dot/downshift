@@ -27,6 +27,7 @@ data class PulseDrive(val rpm: Double, val load: Double, val combustion: Boolean
  * Pulses travel their bank's path (runner stagger, bank delay), ring the tailpipe (a feedback comb, inverted like an
  * open pipe) and pick up the body's resonances. Load sets loudness and brightness; small per-cycle and per-cylinder
  * variations keep it from sounding machine-made. With combustion off the cylinders only pump: quieter and duller.
+ * With voice grains set (setGrains), each firing plays one of them in turn instead of the pulse.
  *
  * render() allocates nothing; configure() rebuilds the exhaust path and crossfades to it.
  */
@@ -67,6 +68,22 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
     private val bankOf = IntArray(MAX_PULSES)
     private val bankIn = DoubleArray(2)
 
+    // Voice grains (spec 6.3): when set, each firing plays the next of them instead of the pressure pulse.
+    private var grains: Array<FloatArray>? = null
+    private var nextGrain = 0
+    private val grainUsed = BooleanArray(MAX_GRAINS)
+    private val isGrain = BooleanArray(MAX_PULSES)
+    private val grainSrc = arrayOfNulls<FloatArray>(MAX_PULSES)
+    private val grainPos = DoubleArray(MAX_PULSES)
+    private val grainStep = DoubleArray(MAX_PULSES)
+    private var idleRpm = 0.0
+    private var redlineRpm = 1.0
+    private var cylinders = 4
+    private var banks = 1
+
+    /** Distinct grains fired since the last setGrains (tests). */
+    val grainsUsed: Int get() = grainUsed.count { it }
+
     private var pipe: ExhaustPath
     private var oldPipe: ExhaustPath? = null
     private var fadeLeft = 0
@@ -87,6 +104,21 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
     fun configure(spec: EngineSpec, exhaust: ExhaustPart) {
         oldPipe = pipe
         pipe = plan(spec, exhaust)
+        fadeLeft = FADE
+    }
+
+    /**
+     * The user's voice grains (spec 6.3), fired in turn instead of the pressure pulse; null or empty goes back to the
+     * pulse. The exhaust path is rebuilt (lighter comb, open muffler, so the voice stays recognisable) and crossfaded.
+     */
+    fun setGrains(g: List<FloatArray>?) {
+        val next = g?.filter { it.size >= 2 }?.take(MAX_GRAINS)?.takeIf { it.isNotEmpty() }?.toTypedArray()
+        if (next == null && grains == null) return
+        grains = next
+        nextGrain = 0
+        grainUsed.fill(false)
+        oldPipe = pipe
+        pipe = ExhaustPath(fs, timbre, banks, voiced = next != null)
         fadeLeft = FADE
     }
 
@@ -127,9 +159,27 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
                         continue
                     }
                     val t0 = -wait[p]
-                    rise[p] = riseK[p].pow(t0)
-                    decay[p] = decayK[p].pow(t0)
+                    if (isGrain[p]) {
+                        grainPos[p] = t0 * grainStep[p]
+                    } else {
+                        rise[p] = riseK[p].pow(t0)
+                        decay[p] = decayK[p].pow(t0)
+                    }
                     started[p] = true
+                }
+                if (isGrain[p]) {
+                    val src = grainSrc[p]!!
+                    val pos = grainPos[p]
+                    val i0 = pos.toInt()
+                    if (i0 >= src.size - 1) {
+                        moveLastTo(p)
+                        p--
+                        continue
+                    }
+                    bankIn[bankOf[p]] += amp[p] * (src[i0] + (src[i0 + 1] - src[i0]) * (pos - i0))
+                    grainPos[p] = pos + grainStep[p]
+                    p--
+                    continue
                 }
                 val r = 1 - rise[p]
                 val v = amp[p] * r * r * decay[p]
@@ -183,6 +233,23 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
         val sigma = if (combustion) JITTER_A_BASE + JITTER_A_IDLE * (1 - load) else JITTER_A_MOTORING
         a *= eventGain[e] * (1 + sigma * gauss())
         if (a <= 0.0) return
+        val g = grains
+        if (g != null) {
+            val slot = freeSlot()
+            val k = nextGrain
+            nextGrain = (k + 1) % g.size
+            grainUsed[k] = true
+            started[slot] = false
+            wait[slot] = BASE_LATENCY_MS * fs / 1000 + eventDelay[e] + JITTER_T_MS * fs / 1000 * gauss() - sinceOnset
+            amp[slot] = a * GRAIN_GAIN
+            decay[slot] = 1.0 // freeSlot() ranks sounding slots by amp × decay
+            isGrain[slot] = true
+            grainSrc[slot] = g[k]
+            grainStep[slot] = stepFor(rpm, g[k].size)
+            bankOf[slot] = eventBank[e]
+            fired++
+            return
+        }
         val scale = (REFERENCE_RPM / rpm).pow(RPM_EXPONENT).coerceIn(MIN_SCALE, MAX_SCALE)
         // Sharper with load and rpm, but never a click: below ~0.15 ms the upper mids buzz (measured against
         // realenginesimulator.com, whose high-rpm spectrum falls about 27 dB from the firing note to 2 kHz).
@@ -196,6 +263,7 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
         val tp = riseMs * ln(1 + 2 * decayMs / riseMs)
         val peak = (1 - exp(-tp / riseMs)).pow(2) * exp(-tp / decayMs)
         val slot = freeSlot()
+        isGrain[slot] = false
         started[slot] = false
         wait[slot] = BASE_LATENCY_MS * fs / 1000 + eventDelay[e] + JITTER_T_MS * fs / 1000 * gauss() - sinceOnset
         amp[slot] = a / peak
@@ -225,12 +293,27 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
         decayK[p] = decayK[last]
         turb[p] = turb[last]
         bankOf[p] = bankOf[last]
+        isGrain[p] = isGrain[last]
+        grainSrc[p] = grainSrc[last]
+        grainPos[p] = grainPos[last]
+        grainStep[p] = grainStep[last]
+    }
+
+    /** A quarter higher at the redline; faster still when needed so that at most MAX_OVERLAP grains sound at once. */
+    private fun stepFor(rpm: Double, len: Int): Double {
+        val x = ((rpm - idleRpm) / (redlineRpm - idleRpm)).coerceIn(0.0, 1.0)
+        val firing = fs * 120.0 / (rpm * cylinders) // samples between firings: 720° over the cylinders
+        return maxOf(1.0 + GRAIN_PITCH_SPAN * x, len / (MAX_OVERLAP * firing)).coerceAtMost(MAX_GRAIN_STEP)
     }
 
     /** Sum of three uniforms: close enough to a unit gaussian, and cheap. */
     private fun gauss() = (random.nextDouble() + random.nextDouble() + random.nextDouble() - 1.5) * 2.0
 
     private fun plan(spec: EngineSpec, exhaust: ExhaustPart): ExhaustPath {
+        idleRpm = spec.idleRpm
+        redlineRpm = maxOf(spec.redlineRpm, spec.idleRpm + 1.0)
+        cylinders = spec.cylinders
+        banks = FiringPlans.banks(spec.id)
         val events = FiringPlans.of(spec)
         timbre = Timbre.of(spec.id, exhaust)
         cylinderGain = (4.0 / spec.cylinders).pow(0.35)
@@ -246,22 +329,22 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
         }
         eventGain = DoubleArray(events.size) { 1 + DISP_GAIN * (2 * random.nextDouble() - 1) }
         next = angles.indexOfFirst { it > crank }.let { if (it < 0) 0 else it }
-        return ExhaustPath(fs, timbre, FiringPlans.banks(spec.id))
+        return ExhaustPath(fs, timbre, banks, voiced = grains != null)
     }
 
     /**
      * Per bank a tailpipe comb whose reflections lose their highs on every round trip (a bare comb rings metallic),
      * then the shared body resonances, the muffler and cabin lowpass, and a DC blocker (pulses are all positive pressure).
      */
-    private class ExhaustPath(fs: Double, t: Timbre, private val banks: Int) {
+    private class ExhaustPath(fs: Double, t: Timbre, private val banks: Int, voiced: Boolean = false) {
         private val buf = Array(banks) { FloatArray((t.tailMs[it] * fs / 1000).toInt().coerceAtLeast(1)) }
         private val idx = IntArray(banks)
         private val reflected = DoubleArray(banks)
         private val damp = 1 - exp(-2 * PI * t.combDampHz / fs)
-        private val feedback = t.combFeedback
+        private val feedback = t.combFeedback * if (voiced) VOICED_COMB else 1.0
         private val bankGain = DoubleArray(banks) { if (it == 0) 1.0 else t.bank1Gain }
         private val formants = t.formants.map { (hz, db, q) -> Biquad.peaking(fs, hz, db, q) }.toTypedArray()
-        private val muffler = Biquad.lowPass(fs, t.mufflerHz)
+        private val muffler = Biquad.lowPass(fs, if (voiced) maxOf(t.mufflerHz, VOICED_MUFFLER_HZ) else t.mufflerHz)
         private val body = Body(fs)
         private val dcCoef = exp(-2 * PI * DC_HZ / fs)
         private var dcIn = 0.0
@@ -400,6 +483,13 @@ class EngineVoice(sampleRate: Int, spec: EngineSpec, exhaust: ExhaustPart, seed:
         private const val STARTER_GAIN = 0.05f
         private const val DC_HZ = 25.0
         private const val QUIET_SAMPLES = 24_000
+        private const val MAX_GRAINS = 8
+        private const val GRAIN_GAIN = 0.6
+        private const val GRAIN_PITCH_SPAN = 0.25
+        private const val MAX_OVERLAP = 6.0
+        private const val MAX_GRAIN_STEP = 4.0
+        private const val VOICED_COMB = 0.3
+        private const val VOICED_MUFFLER_HZ = 9000.0
 
         /** The starter motor's whine rises a little as it gets the engine turning. */
         fun starterHz(rpm: Double) = 140.0 + 0.15 * rpm
