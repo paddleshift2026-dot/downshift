@@ -35,7 +35,9 @@ import java.io.File
 class VoiceHost(app: Application, private val garage: GarageRepository, private val engine: EngineHost) {
     private val tag = "DownshiftLab"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val inbox: File? = app.getExternalFilesDir("voice_in")
+    // Stand-in takes from adb (debug builds, through run-as): the car runs apps as user 10, whose external storage
+    // adb cannot write, so they go into the app's own files.
+    private val inbox = File(app.filesDir, "voice_in").apply { mkdirs() }
     val store = VoiceStore(app)
     val recorded: StateFlow<Set<VoiceSlot>> = store.recorded
 
@@ -85,7 +87,7 @@ class VoiceHost(app: Application, private val garage: GarageRepository, private 
 
     private fun handle(c: DemoCommand.Voice) {
         val slot = c.slot?.let(VoiceSlot::byKey)
-        val file = c.file?.let { name -> inbox?.let { File(it, name) } }
+        val file = c.file?.let { File(inbox, it) }
         when (c.action) {
             "mic" -> {
                 standIn = file?.takeIf { it.isFile }

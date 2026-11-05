@@ -85,7 +85,8 @@ object DemoBus {
  *              voice --es action mic --es file NAME.wav     (the next take reads it instead of the microphone)
  *              voice --es action load --es slot SLOT --es file NAME.wav   (checked and kept as that slot, card on)
  *              voice --es action on|off --es tab engine|intake|exhaust|trans | voice --es action clear
- *              files live in /sdcard/Android/data/com.downshift.app/files/voice_in/
+ *              files live in the app's files/voice_in/ (debug builds; the car runs apps as user 10):
+ *              adb exec-in "run-as com.downshift.app --user 10 sh -c 'cat > files/voice_in/NAME.wav'" < NAME.wav
  *   drive:     drive --es event agree | screen --es to garage|start|safety
  *              drive --es event limit --ei kph 50 (0 = unknown) | camera --ei kph 50 --ei m 300
  *              drive --es event section --ei kph 80 --ei m 100 --ei len 1000 | school --ei m 150 [--ei kph 30]
