@@ -16,7 +16,9 @@ import com.downshift.app.core.powertrain.VirtualPowertrain
 import com.downshift.app.core.sound.InductionModel
 import com.downshift.app.core.sound.PopScheduler
 import com.downshift.app.core.sound.SoundDirector
+import com.downshift.app.core.sound.VoiceUse
 import com.downshift.app.core.synth.EngineVoice
+import com.downshift.app.core.voice.VoiceKit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
@@ -31,7 +33,8 @@ data class Telemetry(val running: Boolean, val rpm: Double, val gear: Int, val l
  * The whole engine for one audio stream. Each renderBlock steps the powertrain, induction and pops by the block's
  * duration, asks the director what to play and has the mixer render it, so control and sound move together.
  * sampleRate is the output rate (use the device's native rate for the low-latency path); packs at other rates are
- * resampled. setBuild, setFuel, start and stop may come from any thread and take effect at the start of the next block.
+ * resampled. setBuild, setFuel, setVoices, start and stop may come from any thread and take effect at the start of the
+ * next block.
  */
 class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRate: Int = pack.sampleRate) {
     @Volatile
@@ -54,6 +57,9 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
     private val pendingFuel = AtomicReference<FuelKind?>(null)
     private val pendingStart = AtomicBoolean(false)
     private val pendingStop = AtomicBoolean(false)
+    private val pendingVoices = AtomicReference<VoiceKit?>(null)
+    private var kit = VoiceKit.NONE
+    private val voiceCounts = java.util.concurrent.ConcurrentHashMap<String, Int>()
 
     private var build = build
     private var pack = pack
@@ -75,6 +81,12 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
     fun setBuild(build: Build, pack: LoadedPack) = pendingBuild.set(build to pack)
 
     fun setFuel(fuel: FuelKind) = pendingFuel.set(fuel)
+
+    /** The user's sounds (spec 6.3) from the next block on; VoiceKit.NONE puts every sound back to synthetic. */
+    fun setVoices(kit: VoiceKit) = pendingVoices.set(kit)
+
+    /** Voice one-shots started since this runtime was made, by VoiceKit name (log and show.sh voice). */
+    val voiceShotCounts: Map<String, Int> get() = HashMap(voiceCounts)
 
     /** The situation's share of the volume (guidance, school zone, passenger, mute), 0..1; glides in over blocks. */
     fun setSituationGain(g: Double) {
@@ -101,6 +113,7 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
         val popList = pops.step(s.overrun, director.rpmNorm(s.rpm), SoundDirector.popIntensity(build), dt)
         val planned = director.plan(s, events, ind, popList, build, fuel)
         val plan = planned.copy(master = planned.master * situationGlide.next(situationGain, dt))
+        for (s in plan.voiceShots) voiceCounts.merge(s.clip, 1) { a, b -> a + b }
         val still = !s.running && s.rpm == 0.0 && events.isEmpty() && !mixer.shotsPlaying
         silentSec = if (still) silentSec + dt else 0.0
         quiet = silentSec >= QUIET_SEC
@@ -123,6 +136,12 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
             }
             syncVoice()
         }
+        pendingVoices.getAndSet(null)?.let { k ->
+            kit = k
+            director.voice = VoiceUse(whistle = k.whistle != null, blowOff = k.blowOff != null, pop = k.pop != null, shift = k.shift != null)
+            mixer.setVoiceClips(k.clips())
+            voice?.setGrains(k.engine)
+        }
         pendingFuel.getAndSet(null)?.let { fuel = it }
         if (pendingStart.getAndSet(false)) powertrain.start()
         if (pendingStop.getAndSet(false)) powertrain.stop()
@@ -138,7 +157,7 @@ class EngineRuntime(pack: LoadedPack, build: Build, fuel: FuelKind, val sampleRa
             val key = build.engine to build.exhaust
             val v = voice
             if (v == null) {
-                voice = EngineVoice(sampleRate, spec, build.exhaust, VOICE_SEED)
+                voice = EngineVoice(sampleRate, spec, build.exhaust, VOICE_SEED).also { it.setGrains(kit.engine) }
             } else if (key != voiceFor) {
                 v.configure(spec, build.exhaust)
             }
