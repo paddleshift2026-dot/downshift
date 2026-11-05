@@ -37,6 +37,13 @@ class GarageRepository(context: Context) {
         next
     }
 
+    /** [f] applied to both wallets (spec 7: deleting the takes turns every voice card off in both). */
+    fun updateAll(f: (GarageState) -> GarageState): GarageState = synchronized(this) {
+        val other = !_demo.value
+        prefs.edit().putString(key(other), GarageCodec.encode(f(load(other)))).apply()
+        update(f)
+    }
+
     /** Switches to the demo wallet or back to the real one; returns the wallet now in use. */
     fun setDemo(on: Boolean): GarageState = synchronized(this) {
         if (on != _demo.value) {

@@ -16,9 +16,13 @@ class DownshiftApp : Application() {
     /** Demo mode and its wallet; made with the process so adb's demo and garage commands work with no screen up. */
     val demo: DemoHost by lazy { DemoHost(this, garage, host, drive) }
 
+    /** The voice parts; made with the process so adb's voice commands work with no screen up. */
+    val voice: VoiceHost by lazy { VoiceHost(this, garage, host) }
+
     override fun onCreate() {
         super.onCreate()
         drive
         demo
+        voice
     }
 }

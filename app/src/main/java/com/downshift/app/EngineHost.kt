@@ -31,8 +31,11 @@ import com.downshift.app.core.pack.ProceduralPack
 import com.downshift.app.core.powertrain.LoadEstimator
 import com.downshift.app.core.runtime.EngineRuntime
 import com.downshift.app.core.runtime.Telemetry
+import com.downshift.app.core.voice.VoiceKit
+import com.downshift.app.core.voice.VoiceSlot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -76,6 +79,12 @@ class EngineHost(private val app: Application) {
     private var wanted = Build() // what the runtime should play: the preview's build during a preview
     private var startedForPreview = false
     @Volatile private var preview: Preview? = null
+    private var voiceRecordings: Map<VoiceSlot, FloatArray> = emptyMap()
+    private var voiceOn: Set<Category> = emptySet()
+    private var previewVoiced = false
+    private var voiceJob: Job? = null
+    @Volatile private var engineVoiced = false
+    private val procedural = HashMap<EngineId, LoadedPack>()
 
     /** The driver's build, not the preview's. */
     @Volatile var build = Build()
@@ -130,6 +139,7 @@ class EngineHost(private val app: Application) {
             val rt = EngineRuntime(pack, first, car.fuel, rate)
             runtime = rt
             output = EngineAudioOutput(app, rt, ::inputs) { if (preview != null) 0L else lastPedalAtMs }.also { it.start() }
+            pushVoices(voiceRecordings, voiceOn) // takes set while the runtime was being made
             Log.i(tag, "engine ready: ${first.engine} pack=${pack.source} fuel=${car.fuel} rate=$rate")
             if (wanted != first) play(wanted) // a build set while the runtime was being made
         }
@@ -148,6 +158,7 @@ class EngineHost(private val app: Application) {
         cancelAudition()
         engineOn = false
         runtime?.stop()
+        runtime?.voiceShotCounts?.takeIf { it.isNotEmpty() }?.let { Log.i(tag, "voice shots $it") }
     }
 
     fun setBuild(b: Build) {
@@ -155,6 +166,31 @@ class EngineHost(private val app: Application) {
         val limit = EngineSpec.MAX_REDLINE_OFFSET
         build = b.copy(pops = b.pops.coerceIn(0.0, 1.0), volume = b.volume.coerceIn(0.0, 1.0), redlineOffset = b.redlineOffset.coerceIn(-limit, limit))
         play(build)
+    }
+
+    /**
+     * The saved takes and the voice cards that are on (spec 7), made into the engine's VoiceKit off the main thread.
+     * A preview with its own take keeps that until it ends.
+     */
+    fun setVoices(recordings: Map<VoiceSlot, FloatArray>, on: Set<Category>) {
+        voiceRecordings = recordings
+        voiceOn = on
+        if (!previewVoiced) pushVoices(recordings, on)
+    }
+
+    private fun pushVoices(recordings: Map<VoiceSlot, FloatArray>, on: Set<Category>) {
+        val rt = runtime ?: return
+        voiceJob?.cancel()
+        voiceJob = scope.launch {
+            val kit = withContext(Dispatchers.Default) { VoiceKit.of(recordings, on, rt.sampleRate) }
+            rt.setVoices(kit)
+            Log.i(tag, "voice kit $kit")
+            val voiced = kit.engine != null
+            if (voiced != engineVoiced) {
+                engineVoiced = voiced
+                play(wanted) // a recorded pack gives way to the synthesised engine while the engine voice is on
+            }
+        }
     }
 
     /** The situation's share of the volume (DriveHost: guidance, school zone, passenger, mute). */
@@ -188,7 +224,7 @@ class EngineHost(private val app: Application) {
      * [onDone] runs on the main thread when this preview ends or is cancelled (not when another one replaces it),
      * and straight away when it cannot play.
      */
-    fun audition(build: Build, category: Category, onDone: () -> Unit) {
+    fun audition(build: Build, category: Category, voice: Map<VoiceSlot, FloatArray>? = null, onDone: () -> Unit) {
         val rt = runtime
         if (rt == null || !parked) {
             onDone()
@@ -199,6 +235,13 @@ class EngineHost(private val app: Application) {
         val p = Preview(Audition(category, cold), onDone)
         preview = p
         wanted = build
+        if (voice != null) {
+            previewVoiced = true
+            pushVoices(voiceRecordings + voice, voiceOn + category) // the take being tried, heard even with its card off
+        } else if (previewVoiced) {
+            previewVoiced = false
+            pushVoices(voiceRecordings, voiceOn)
+        }
         scope.launch {
             val pack = withContext(Dispatchers.Default) { packFor(build.engine) }
             if (preview !== p) return@launch
@@ -233,6 +276,10 @@ class EngineHost(private val app: Application) {
     private fun restore() {
         if (startedForPreview && !engineOn) runtime?.stop()
         startedForPreview = false
+        if (previewVoiced) {
+            previewVoiced = false
+            pushVoices(voiceRecordings, voiceOn)
+        }
         play(build)
     }
 
@@ -283,8 +330,10 @@ class EngineHost(private val app: Application) {
     }
 
     private fun packFor(engine: EngineId): LoadedPack = synchronized(packs) {
-        // Licensed recordings when they are installed, otherwise the engine is synthesised in real time.
-        packs.getOrPut(engine) { AssetPackLoader.load(app, engine) ?: ProceduralPack.build(Engines.spec(engine)) }
+        // Licensed recordings when they are installed, otherwise the engine is synthesised in real time; the engine
+        // voice plays through the synthesised engine, so it stands in for a recorded pack while it is on.
+        val usual = packs.getOrPut(engine) { AssetPackLoader.load(app, engine) ?: ProceduralPack.build(Engines.spec(engine)) }
+        if (!engineVoiced || usual.procedural) usual else procedural.getOrPut(engine) { ProceduralPack.build(Engines.spec(engine)) }
     }
 
     private fun handle(c: DemoCommand) {

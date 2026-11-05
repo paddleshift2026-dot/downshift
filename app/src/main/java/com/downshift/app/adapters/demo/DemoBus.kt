@@ -42,6 +42,9 @@ sealed class DemoCommand {
     object EngineStop : DemoCommand()
     data class Record(val on: Boolean, val name: String) : DemoCommand()
 
+    /** The voice parts: open the record sheet, a file for the next take, a file straight into a slot, cards on/off, clear. */
+    data class Voice(val action: String, val slot: String? = null, val tab: String? = null, val file: String? = null) : DemoCommand()
+
     /** Changes only the parts and sliders that are given. */
     data class BuildChange(
         val engine: EngineId? = null,
@@ -78,6 +81,11 @@ object DemoBus {
  *              lapse) need demo mode on, so the real wallet changes only through real driving (DemoPolicy)
  *   garage:    garage --es action add [--ei points 1000] | garage --es action reset (the demo state)
  *              garage --es action unlock|equip|preview --es part ID | garage --es action tab --es tab engine|intake|exhaust|trans|tune
+ *   voice:     voice --es action open --es slot engine|whistle|blowoff|pop|shift   (the record sheet, in the garage)
+ *              voice --es action mic --es file NAME.wav     (the next take reads it instead of the microphone)
+ *              voice --es action load --es slot SLOT --es file NAME.wav   (checked and kept as that slot, card on)
+ *              voice --es action on|off --es tab engine|intake|exhaust|trans | voice --es action clear
+ *              files live in /sdcard/Android/data/com.downshift.app/files/voice_in/
  *   drive:     drive --es event agree | screen --es to garage|start|safety
  *              drive --es event limit --ei kph 50 (0 = unknown) | camera --ei kph 50 --ei m 300
  *              drive --es event section --ei kph 80 --ei m 100 --ei len 1000 | school --ei m 150 [--ei kph 30]
@@ -132,6 +140,12 @@ class DemoReceiver : BroadcastReceiver() {
                 volume = if (intent.hasExtra("volume")) intent.getFloatExtra("volume", 0.8f).toDouble() else null,
             )
             "record" -> DemoCommand.Record(on = value != "off", name = intent.getStringExtra("name") ?: "recording")
+            "voice" -> DemoCommand.Voice(
+                action = intent.getStringExtra("action") ?: return,
+                slot = intent.getStringExtra("slot"),
+                tab = intent.getStringExtra("tab"),
+                file = intent.getStringExtra("file"),
+            )
             "focus" -> DemoCommand.Focus(
                 FocusMode.entries.firstOrNull { it.name.equals(intent.getStringExtra("mode"), ignoreCase = true) } ?: FocusMode.NONE,
             )
