@@ -98,7 +98,7 @@ import java.util.Locale
  * is the one live value and is read while drawing.
  */
 @Composable
-fun GarageScreen(vm: GarageViewModel = viewModel()) {
+fun GarageScreen(vm: GarageViewModel = viewModel(), rec: VoiceViewModel = viewModel()) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val demo by vm.demoOn.collectAsStateWithLifecycle()
     BoxWithConstraints(Modifier.fillMaxSize().background(Ground)) {
@@ -108,15 +108,16 @@ fun GarageScreen(vm: GarageViewModel = viewModel()) {
             if (wide) {
                 Row(Modifier.weight(1f).fillMaxWidth()) {
                     BuildColumn(ui, vm, Modifier.width(600.dp).fillMaxHeight())
-                    PartsSection(ui, vm, wide = true, Modifier.weight(1f).fillMaxHeight()) {}
+                    PartsSection(ui, vm, wide = true, Modifier.weight(1f).fillMaxHeight(), rec::open)
                 }
             } else {
                 Column(Modifier.weight(1f).fillMaxWidth()) {
                     BuildStrip(ui, vm)
-                    PartsSection(ui, vm, wide = false, Modifier.weight(1f).fillMaxWidth()) {}
+                    PartsSection(ui, vm, wide = false, Modifier.weight(1f).fillMaxWidth(), rec::open)
                 }
             }
         }
+        VoiceRecordSheet(rec, ui.parked) // over the whole garage while a take is being made; nothing otherwise
     }
 }
 
