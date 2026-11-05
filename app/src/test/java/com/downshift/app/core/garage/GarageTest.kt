@@ -99,4 +99,19 @@ class GarageTest {
         assertEquals(500, b.redlineOffset)
         assertEquals(0.6, b.volume, 1e-9)
     }
+
+    @Test
+    fun aVoiceCardNeedsARecordingToComeOn() {
+        val s = GarageState.FIRST_RUN
+        assertNull(Garage.setVoice(s, Category.ENGINE, true, recorded = emptySet()))
+        val on = Garage.setVoice(s, Category.ENGINE, true, recorded = setOf(Category.ENGINE))!!
+        assertEquals(setOf(Category.ENGINE), on.voiceOn)
+        assertEquals(emptySet<Category>(), Garage.setVoice(on, Category.ENGINE, false, recorded = emptySet())!!.voiceOn)
+    }
+
+    @Test
+    fun onlyRecordedCardsAreHeard() {
+        val s = GarageState.FIRST_RUN.copy(voiceOn = setOf(Category.ENGINE, Category.EXHAUST))
+        assertEquals(setOf(Category.EXHAUST), Garage.voicesHeard(s, setOf(Category.EXHAUST, Category.INTAKE)))
+    }
 }

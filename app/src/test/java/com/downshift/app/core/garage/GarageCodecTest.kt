@@ -38,4 +38,13 @@ class GarageCodecTest {
         val s = GarageState.DEMO.copy(balance = 600, owned = GarageState.DEMO.owned + "v12", engine = "v12")
         assertEquals(s, GarageCodec.decode(GarageCodec.encode(s), fallback = GarageState.DEMO))
     }
+
+    @Test
+    fun anOldSaveHasNoVoicesOn() = assertEquals(emptySet<Category>(), GarageCodec.decode("""{"version":1,"balance":10}""").voiceOn)
+
+    @Test
+    fun voiceCardsSurviveTheRoundTrip() {
+        val s = GarageState.DEMO.copy(voiceOn = setOf(Category.ENGINE, Category.TRANSMISSION))
+        assertEquals(s, GarageCodec.decode(GarageCodec.encode(s)))
+    }
 }

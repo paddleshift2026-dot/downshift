@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Tune(val pops: Int = 3, val redlineOffset: Int = 0, val volume: Int = 80)
 
-/** Everything the garage keeps: the balance, what is owned, what is fitted (by part id) and the tune. */
+/** Everything the garage keeps: the balance, what is owned, what is fitted (by part id), the tune and the voice cards that are on. */
 @Serializable
 data class GarageState(
     val version: Int = 1,
@@ -17,6 +17,8 @@ data class GarageState(
     val exhaust: String = "stock",
     val transmission: String = "at",
     val tune: Tune = Tune(),
+    /** The voice cards that are on (spec 7); only cards with a recording are heard (Garage.voicesHeard). */
+    val voiceOn: Set<Category> = emptySet(),
 ) {
     companion object {
         /** A new driver: no points, the base build. */

@@ -77,6 +77,15 @@ object Garage {
         return left.filter { it.price > s.balance }.minByOrNull { it.price } ?: left.maxByOrNull { it.price }
     }
 
+    /** Turns a voice card on, which needs one of its recordings ([recorded]: the tabs that have one), or off. */
+    fun setVoice(s: GarageState, category: Category, on: Boolean, recorded: Set<Category>): GarageState? {
+        if (on && category !in recorded) return null
+        return s.copy(voiceOn = if (on) s.voiceOn + category else s.voiceOn - category)
+    }
+
+    /** The voice cards that are on and still have a recording (a deleted file counts as off). */
+    fun voicesHeard(s: GarageState, recorded: Set<Category>): Set<Category> = s.voiceOn intersect recorded
+
     fun addPoints(s: GarageState, n: Int): GarageState = s.copy(balance = (s.balance + n).coerceAtLeast(0))
 
     /** Applies a tune, snapped to its steps and ranges. */
