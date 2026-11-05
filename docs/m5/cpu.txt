@@ -1,0 +1,4 @@
+app %CPU (top, one core = 100), 2026-11-05 19:23, demo build (I4 · TURBO 2 · SPORT · DCT), engine on in park,
+pedal 70% and 0% a second each for 20 s
+all five voice cards on: app 42.4, engine thread 4.6 (20 samples)
+no voice card on:        app 40.5, engine thread 4.6 (20 samples)   (M3 drive: 15.1)

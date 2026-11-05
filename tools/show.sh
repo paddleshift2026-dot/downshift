@@ -18,6 +18,8 @@
 #   bash tools/show.sh coldstart  # five cold starts (am start -W) -> docs/m4/coldstart.txt
 #   bash tools/show.sh release    # the release APK: contents, install, demo mode, adb, then the debug build back
 #   bash tools/show.sh ux         # the driving restrictions: neutral stops a preview and locks the garage -> docs/m4/ux.txt
+#   bash tools/show.sh voice      # the voice parts: record sheet, takes, cards, parked-only, a drive with every voice -> docs/m5/voice.txt
+#   bash tools/show.sh voicecpu   # %CPU revving in park with all five voice cards on, then none -> docs/m5/cpu.txt
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OUT="$HERE/../docs/m4"
@@ -454,12 +456,118 @@ ux() {
   } | tee "$OUT/ux.txt"
 }
 
+# The synthetic takes (voice_samples.py) into the app's files/voice_in for adb's voice mic|load. The car runs apps as
+# user 10, whose external storage adb cannot write, so they are streamed in with run-as (debug builds).
+push_samples() {
+  local dir="$HERE/../docs/m5/samples"
+  python "$HERE/voice_samples.py" "$dir" > /dev/null
+  "$ADB" shell "run-as $PKG --user 10 mkdir -p files/voice_in" < /dev/null
+  for f in engine whistle blowoff pop shift; do
+    "$ADB" exec-in "run-as $PKG --user 10 sh -c 'cat > files/voice_in/$f.wav'" < "$dir/$f.wav"
+  done
+}
+
+# The voice parts (docs/superpowers/specs/2026-11-05-voice-parts-design.md) with synthetic takes fed as the microphone.
+voice() {
+  local out5="$HERE/../docs/m5" shots kit
+  mkdir -p "$out5"
+  echo "voice parts -> docs/m5/voice.txt"
+  # The record sheet asks for the microphone on the first take; the check grants it up front (the takes are files).
+  "$ADB" shell pm grant --user 10 "$PKG" android.permission.RECORD_AUDIO < /dev/null
+  "$ADB" shell am force-stop "$PKG" < /dev/null # a record sheet left open would cover the garage
+  start_clean
+  drive screen --es to garage; sleep 2
+  app --es cmd voice --es action clear; sleep 1
+  push_samples
+  "$ADB" logcat -c
+  {
+    echo "voice parts, $(date '+%Y-%m-%d %H:%M')"
+    garage tab --es tab engine; sleep 1.5
+    check "1 the engine tab ends with the voice card" "$(onscreen '내 목소리 엔진')" yes
+    tap_text "녹음해서 만들어요"; sleep 1
+    check "2 its action bar offers a take" "$(onscreen '녹음하기')" yes
+    app --es cmd voice --es action mic --es file engine.wav
+    tap_text "녹음하기"; sleep 1.5
+    # (the guide line itself has quotes, which uiautomator puts in single-quoted attributes that onscreen does not read)
+    check "3 the record sheet opens with the engine guide" "$(onscreen '쓰이는 곳: 실린더가')" yes
+    tap_text "녹음 시작"; sleep 6.5
+    check "4 the take passes the check" "$(onscreen '잘 녹음됐어요')" yes
+    tap_text "이걸로 쓸게요"; sleep 2
+    check "5 keeping it turns the card on" "$(onscreen '켜짐 · 장착한')" yes
+    check "5 ... and the engine got four grains" "$(more "$(log | grep -c 'voice kit engine=4')" 0)" yes
+    for s in whistle blowoff pop shift; do app --es cmd voice --es action load --es slot "$s" --es file "$s.wav"; sleep 1; done
+    sleep 2
+    check "6 the other four load as good takes" "$(log | grep -c 'voice load [a-z]* OK')" 4
+    kit="$(log | grep 'voice kit' | tail -1)"
+    check "6 ... and every card is heard ($kit)" "$(echo "$kit" | grep -c 'engine=4 whistle=[1-9][0-9]* blowoff=[1-9][0-9]* pop=[1-9][0-9]* shift=[1-9][0-9]*')" 1
+    post "/vehicle/gear?gear=Neutral"; sleep 2.5
+    check "7 DO locks the garage, voice card and all" "$(onscreen '주행 중에는 쓸 수 없어요')" yes
+    post "/vehicle/gear?gear=Park"; sleep 2.5
+    garage tab --es tab exhaust; sleep 1; tap_text "내 목소리 배기"; sleep 1; tap_text "다시 녹음"; sleep 1.5
+    app --es cmd voice --es action mic --es file pop.wav
+    tap_text "녹음 시작"; sleep 3.4; post "/vehicle/gear?gear=Neutral"; sleep 3; post "/vehicle/gear?gear=Park"; sleep 2.5
+    check "8 a take cut short by DO is dropped (the guide is back)" "$(onscreen '녹음 시작')" yes
+    tap_text "닫기"; sleep 1
+    "$ADB" logcat -c
+    drive screen --es to start; sleep 2; hold_text "시동 걸기" 1300; sleep 4
+    rev 80 1.2; sleep 2
+    post "/vehicle/gear?gear=Drive"; sleep 2; hold_speed 50 10; post "/vehicle/controls?accelerator=0"; sleep 3
+    stop_car; post "/vehicle/gear?gear=Park"; sleep 3; app --es cmd stop; sleep 2
+    shots="$(log | grep -o 'voice shots {[^}]*}' | tail -1)"
+    check "9 the drive changed gear with the voice ($shots)" "$(echo "$shots" | grep -c 'voice:shift=')" 1
+    check "9 ... and popped with the voice" "$(echo "$shots" | grep -c 'voice:pop=')" 1
+    app --es cmd voice --es action clear; sleep 2
+    check "10 deleting the takes turns every card off" "$(log | grep 'voice kit' | tail -1 | grep -c 'engine=0 whistle=0 blowoff=0 pop=0 shift=0')" 1
+  } | tee "$out5/voice.txt"
+}
+
+# Mean %CPU over $1 one-second samples of the whole app and of its audio thread (DownshiftEngine), where the voices are
+# made; the start screen's needle redraws dominate the app's share on the emulator (M4 cpu.txt).
+cpu_split() {
+  local p; p="$(pid)"
+  "$ADB" shell "top -H -b -d 1 -n $1 -p $p" < /dev/null | tr -d '\r' | awk '
+    $1 == "TID" { n++; next }
+    n > 0 && $1 ~ /^[0-9]+$/ { app += $9; if ($0 ~ /DownshiftEngine/) eng += $9 }
+    END { printf "app %.1f, engine thread %.1f (%d samples)", app / n, eng / n, n }'
+}
+
+# Revs in park for 20 s (pedal 70% and 0% a second each) with the engine on, then stops it; prints cpu_split's line.
+rev_cpu() {
+  drive screen --es to start; sleep 2; app --es cmd start; sleep 3
+  (for _ in 1 2 3 4 5 6 7 8 9 10 11 12; do post "/vehicle/controls?accelerator=70"; sleep 1; post "/vehicle/controls?accelerator=0"; sleep 1; done) &
+  sleep 2; cpu_split 20; wait
+  app --es cmd stop; sleep 2
+}
+
+# The voice parts' cost: %CPU revving in park with all five voice cards on, then with none -> docs/m5/cpu.txt
+voicecpu() {
+  local out5="$HERE/../docs/m5" on off
+  mkdir -p "$out5"
+  echo "voice parts %CPU -> docs/m5/cpu.txt"
+  start_clean
+  app --es cmd voice --es action clear; sleep 1
+  push_samples
+  for f in engine whistle blowoff pop shift; do app --es cmd voice --es action load --es slot "$f" --es file "$f.wav"; sleep 1; done
+  sleep 2
+  on="$(rev_cpu)"
+  app --es cmd voice --es action clear; sleep 2
+  off="$(rev_cpu)"
+  {
+    echo "app %CPU (top, one core = 100), $(date '+%Y-%m-%d %H:%M'), demo build (I4 · TURBO 2 · SPORT · DCT), engine on in park,"
+    echo "pedal 70% and 0% a second each for 20 s"
+    echo "all five voice cards on: $on"
+    echo "no voice card on:        $off   (M3 drive: 15.1)"
+  } | tee "$out5/cpu.txt"
+}
+
 cmd="${1:-}"
 case "$cmd" in
   soak) soak "${2:-30}" ;;
   coldstart) coldstart ;;
   release) release ;;
   ux) ux ;;
+  voice) voice ;;
+  voicecpu) voicecpu ;;
   wallet) wallet ;;
   latency) latency ;;
   cpu) cpu ;;
@@ -468,5 +576,5 @@ case "$cmd" in
   video) video ;;
   shots) shots ;;
   volume) volume "${2:?index 0..45}"; echo "car volume $(volume_index) / 45" ;;
-  *) echo "usage: show.sh wallet|latency|cpu|background|pt|video|shots|volume N|soak [MIN]|coldstart|release|ux"; exit 1 ;;
+  *) echo "usage: show.sh wallet|latency|cpu|background|pt|video|shots|volume N|soak [MIN]|coldstart|release|ux|voice|voicecpu"; exit 1 ;;
 esac
