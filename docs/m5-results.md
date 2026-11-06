@@ -56,6 +56,18 @@
 
 청음 중에 고친 것: 시동 화면은 엔진 설명 줄 끝에 "· 내 목소리"를 붙였는데, V12에서는 점화 순서가 길어 이 부분이 화면 밖으로 잘렸다. 그래서 번호판 위의 "내 목소리" 칩으로 바꿨다.
 
+## release 0.5.0 (11/06)
+
+`versionName` 0.5.0, `versionCode` 5. 파일은 `apk/PaddleShift_Downshift_release.apk`(27MB, debug 키 서명)다.
+
+| 점검 | 결과 | 근거 |
+|---|---|---|
+| `show.sh release` | 음원 파일 0개, 웹 페달 페이지 있음, 설치됨, 개발용 줄 숨김, adb 시연 명령 동작, 시연 모드가 꺼져 있으면 포인트 주입 거절 | `m5/release.txt` |
+| `show.sh ux` (release) | 10/10 | `m5/ux_release.txt` |
+| 목소리 파츠 (release, 실제 마이크 경로) | 5/5. 목소리 카드, 녹음 창, 첫 녹음 때 마이크 권한 창, 거절하면 안내, 허용하면 AudioRecord로 녹음해 점검(PC 마이크가 꺼져 있어 "소리가 안 들렸어요") | `m5/release_voice.txt` |
+
+`show.sh voice`는 adb로 넣은 대역 녹음을 쓰는데, run-as는 debug 빌드에서만 된다. 그래서 release에서는 위처럼 실제 마이크 경로로 확인했다.
+
 ## 시연 영상 (11/06)
 
 PC를 재부팅하고 다른 앱을 닫은 뒤 에뮬레이터를 콜드 부트해서 다시 찍었다. 명령은 `VOICE_DIR=docs/m5/voice_user bash tools/show.sh video`이고, 목소리 장면에는 사용자 녹음을 썼다.

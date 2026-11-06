@@ -1,0 +1,6 @@
+release 0.5.0, the voice parts with the real microphone path (no adb stand-in: run-as needs a debug build), 2026-11-06 18:18
+PASS 1 the engine tab has the voice card (yes)
+PASS 2 the record sheet opens with the guide (yes)
+PASS 3 the first take asks for the microphone (com.android.permissioncontroller/.permission.ui.GrantPermissionsActivity)
+PASS 4 refusing shows why no take was made (yes)
+PASS 5 with the permission a take runs through AudioRecord and the check judges it (host mic off: silent) (yes)
