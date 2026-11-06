@@ -16,6 +16,8 @@
 
 ## 바로 실행하기 (심사용)
 
+**APK:** `apk/PaddleShift_Downshift_release.apk` (release 0.5.1, 설치·실행 가능한 release 빌드)
+
 준비: Android Studio의 Pleos Connect Emulator v2.1.0 AVD(API 34, Automotive), PC의 adb. 기어·페달·좌석은 에뮬레이터 안의 Virtual Console로 바꿉니다(`adb forward tcp:8088 tcp:8088` 후 브라우저로 http://127.0.0.1:8088).
 
 ```bash
@@ -27,6 +29,7 @@ adb shell am start -n com.downshift.app/.MainActivity     # 처음 열 때 차�
 2. 개러지 **세팅** 탭 맨 아래 **시연 모드**를 켭니다. 시연 지갑(3,000P)으로 바뀌고, 시연 버튼·배속·웹 페달이 나타납니다. 끄면 실제 지갑으로 돌아옵니다.
 3. 웹 페달: `adb forward tcp:8790 tcp:8790` 후 브라우저로 http://127.0.0.1:8790 을 엽니다. 스페이스바(끝까지), 슬라이더(계속 밟기), 페달 그림 끌기, 게임용 페달로 밟습니다. 아래 진행자 버튼으로 기어 D·P, 스쿨존, 안내 음성, 동승자를 넣습니다.
 4. 개러지에서 부품을 미리 듣고 → **이 빌드로 시동** → START를 0.9초 누르고 → 웹 페달로 레브 → 기어 D면 주행 화면(포인트 링·상황 칩·음소거) → 기어 P면 결산. 기어 N 정차처럼 주행 규제가 걸리면 정차 전용 화면은 잠깁니다.
+5. 내 목소리 파츠: 개러지 각 탭 맨 끝의 **내 목소리** 카드 → 녹음하기. 처음 녹음할 때 마이크 권한을 묻습니다. 에뮬레이터는 Extended controls → Microphone에서 "Virtual microphone uses host audio input"을 켜야 PC 마이크 소리가 들어갑니다.
 
 권한을 미리 주려면 `bash tools/probe.sh grant`(앱은 운전자 사용자 10으로 돕니다).
 
@@ -106,6 +109,8 @@ export JAVA_HOME="/c/Program Files/Eclipse Adoptium/jdk-17.0.20.101-hotspot"
 - 3D 엔진 렌더: 프로젝트의 three.js 코드로 만든 모델을 24장씩 렌더한 것.
 - 부품 이미지: Figma AI로 생성(출처 `docs/m2/parts_source.md`).
 - 글꼴: 시스템 Roboto.
+- 오픈소스 라이브러리: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) (BSD-3-Clause NanoHTTPD, Apache-2.0 AndroidX·Kotlin 등 108개와 라이선스 원문, Pleos Connect SDK는 따로 표시). 같은 내용이 앱의 세팅 탭 "오픈소스 라이선스"에 있고, `python tools/oss_notices.py`가 release 의존성에서 다시 만듭니다.
+- 권한: release APK는 앱이 실제로 쓰는 권한만 선언합니다(Pleos App Market 심사는 승인된 권한만 허용). 첫 검증(M0) 프로브가 읽던 나머지 차량 속성 권한과 리허설용 경로 취소 권한은 디버그 빌드에만 있습니다(`app/src/debug/AndroidManifest.xml`).
 
 ## 알려진 제한
 
@@ -125,7 +130,8 @@ adb shell am broadcast -n $R --es cmd garage --es action preview --es part v8   
 adb shell am broadcast -n $R --es cmd drive --es event limit --ei kph 50           # camera | school | turn | lapse: 시연 모드에서만
 adb shell am broadcast -n $R --es cmd drive --es event guide                       # 내비 안내음 대역
 adb shell am broadcast -n $R --es cmd voice --es action on --es tab engine      # 내 목소리 카드 켜기·끄기 (open | mic | load | clear)
-bash tools/show.sh voice|voicecpu                                                  # M5 내 목소리 파츠 확인 (docs/m5/)
+bash tools/show.sh voice|voicecpu|releasevoice                                     # M5 내 목소리 파츠 확인 (docs/m5/, releasevoice는 release 설치 후)
+python tools/oss_notices.py                                                        # THIRD_PARTY_NOTICES.md와 앱 안 오픈소스 고지 다시 만들기
 bash tools/show.sh wallet|latency|cpu|background|soak|coldstart|release|shots|ux   # M4 확인 (docs/m4/)
 bash tools/drive.sh flow|trip|persist|cpu|music                                    # M3 주행 확인 (docs/m3/)
 bash tools/garage.sh flow|persist|cpu|mem|frames                                   # M2 개러지 확인 (docs/m2/)

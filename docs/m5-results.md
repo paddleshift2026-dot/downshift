@@ -56,7 +56,7 @@
 
 청음 중에 고친 것: 시동 화면은 엔진 설명 줄 끝에 "· 내 목소리"를 붙였는데, V12에서는 점화 순서가 길어 이 부분이 화면 밖으로 잘렸다. 그래서 번호판 위의 "내 목소리" 칩으로 바꿨다.
 
-## release 0.5.0 (11/06)
+## release 0.5.0 (11/06, 이후 0.5.1로 대체)
 
 `versionName` 0.5.0, `versionCode` 5. 파일은 `apk/PaddleShift_Downshift_release.apk`(27MB, debug 키 서명)다.
 
@@ -67,6 +67,21 @@
 | 목소리 파츠 (release, 실제 마이크 경로) | 5/5. 목소리 카드, 녹음 창, 첫 녹음 때 마이크 권한 창, 거절하면 안내, 허용하면 AudioRecord로 녹음해 점검(PC 마이크가 꺼져 있어 "소리가 안 들렸어요") | `m5/release_voice.txt` |
 
 `show.sh voice`는 adb로 넣은 대역 녹음을 쓰는데, run-as는 debug 빌드에서만 된다. 그래서 release에서는 위처럼 실제 마이크 경로로 확인했다.
+
+## 공모전 사이트 전수검토 뒤 고친 것 (11/06, release 0.5.1)
+
+공모전 사이트의 참가 가이드·공지·FAQ·이용약관과 제출물을 대조한 뒤 고쳤다.
+
+| 항목 | 고친 것 | 근거 |
+|---|---|---|
+| 오픈소스 고지 | `THIRD_PARTY_NOTICES.md`와 앱 세팅 탭 "오픈소스 라이선스"(assets/oss_licenses.txt)를 추가했다. 오픈소스 108개(BSD-3-Clause 2, Apache-2.0 106)와 라이선스 원문, Pleos SDK 6개(오픈소스 아님)가 들어 있다. `tools/oss_notices.py`가 release 의존성과 각 라이브러리의 POM에서 만들고, 원문은 라이브러리 jar 안의 파일을 쓴다 | 이용약관 7조 7항(오픈소스 라이선스 준수·출처 표기) |
+| 권한 | release는 실제로 쓰는 12개만 선언한다. SDK가 넣는 2개를 더하면 14개다. 프로브용 6개(CAR_ENGINE_DETAILED·CAR_ENERGY·CAR_MILEAGE·CAR_EXTERIOR_LIGHTS·CONTROL_CAR_SEATS·NAVI_ROUTE_SEARCH)는 `app/src/debug/AndroidManifest.xml`로 옮겼다. 시작할 때 묻는 권한도 선언된 것만으로 거른다 | 설명회: Pleos App Market 심사는 승인된 권한만 허용 |
+| 콜라보 카드 | "한정 콜라보 · [가격]" 자리 표시를 "한정 콜라보 · 3,900원부터"(기획서 6장 가격대)로 바꿨다 | 제출 캡처에 미완성 문구 |
+| 캡처 | M4 캡처 9장과 목소리 캡처 2장을 지금 앱으로 다시 찍었다. 탭 끝 목소리 카드와 새 가격 문구가 보인다 | — |
+| README | APK 위치 줄, 내 목소리 녹음과 마이크 권한 안내, 오픈소스·권한 설명을 넣었다 | 가이드: README에 APK 위치 |
+| 점검 도구 | `show.sh releasevoice`(release의 실제 마이크 경로와 오픈소스 화면)를 추가했다. `ui_node`가 작은따옴표로 감싼 속성도 읽게 했다 | — |
+
+release 0.5.1 점검: `show.sh release` 통과, release `ux` 10/10, `releasevoice` 6/6 (`m5/release.txt`, `m5/ux_release.txt`, `m5/release_voice.txt`). 테스트는 299개 그대로 통과한다.
 
 ## 시연 영상 (11/06)
 

@@ -61,9 +61,10 @@ PY
 }
 
 # The centre "x y" of the first UI node whose text or content description contains $1 (not named node: that is Node.js).
+# uiautomator puts an attribute holding a double quote in single quotes, so both are read (only up to the first quote).
 ui_node() {
   "$ADB" shell uiautomator dump //sdcard/ui.xml < /dev/null > /dev/null 2>&1
-  "$ADB" shell cat //sdcard/ui.xml < /dev/null | tr '>' '\n' | grep -E "(text|content-desc)=\"[^\"]*$1" | head -1 \
+  "$ADB" shell cat //sdcard/ui.xml < /dev/null | tr '>' '\n' | grep -E "(text|content-desc)=[\"'][^\"']*$1" | head -1 \
     | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | grep -o '[0-9]*' | tr '\n' ' ' | awk 'NF == 4 { printf "%d %d", ($1 + $3) / 2, ($2 + $4) / 2 }'
 }
 tap_text() { local xy; xy="$(ui_node "$1")"; if [ -n "$xy" ]; then "$ADB" shell input tap $xy < /dev/null; else echo "  (no '$1' on screen)"; fi; }

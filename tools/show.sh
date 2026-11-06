@@ -21,6 +21,8 @@
 #   bash tools/show.sh ux         # the driving restrictions: neutral stops a preview and locks the garage -> docs/m4/ux.txt
 #   bash tools/show.sh voice      # the voice parts: record sheet, takes, cards, parked-only, a drive with every voice -> docs/m5/voice.txt
 #   bash tools/show.sh voicecpu   # %CPU revving in park with all five voice cards on, then none -> docs/m5/cpu.txt
+#   bash tools/show.sh releasevoice # with the release APK installed: the voice parts via the real microphone path and the
+#                                 #   open-source notices -> docs/m5/release_voice.txt
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OUT="$HERE/../docs/m4"
@@ -569,6 +571,34 @@ cpu_split() {
     END { printf "app %.1f, engine thread %.1f (%d samples)", app / n, eng / n, n }'
 }
 
+# The release APK (installed beforehand): the voice parts through the real microphone path, since adb stand-in takes
+# need run-as (debug builds), and the open-source notices in the 세팅 tab -> docs/m5/release_voice.txt
+releasevoice() {
+  local top
+  echo "release voice parts and notices -> docs/m5/release_voice.txt"
+  {
+    echo "$("$ADB" shell dumpsys package "$PKG" < /dev/null | tr -d '\r' | grep -m1 versionName | tr -d ' ') (release), the voice parts with the real microphone path, $(date '+%Y-%m-%d %H:%M')"
+    "$ADB" shell pm revoke --user 10 "$PKG" android.permission.RECORD_AUDIO < /dev/null
+    "$ADB" shell am start -n "$PKG/.MainActivity" < /dev/null > /dev/null 2>&1; sleep 4
+    demo_mode on on; sleep 1; drive screen --es to garage; sleep 2; garage tab --es tab engine; sleep 1.5
+    check "1 the engine tab has the voice card" "$(onscreen '내 목소리 엔진')" yes
+    app --es cmd voice --es action open --es slot engine; sleep 1.5
+    check "2 the record sheet opens with the guide" "$(onscreen '쓰이는 곳: 실린더가')" yes
+    tap_text "녹음 시작"; sleep 2.5
+    top="$("$ADB" shell dumpsys activity activities < /dev/null | tr -d '\r' | grep -m1 topResumedActivity | grep -o '[a-z.]*/[A-Za-z.]*')"
+    check "3 the first take asks for the microphone" "$top" "com.android.permissioncontroller/.permission.ui.GrantPermissionsActivity"
+    "$ADB" shell input keyevent KEYCODE_BACK < /dev/null; sleep 2
+    check "4 refusing shows why no take was made" "$(onscreen '마이크 권한이 있어야')" yes
+    "$ADB" shell pm grant --user 10 "$PKG" android.permission.RECORD_AUDIO < /dev/null
+    tap_text "다시 해 보기"; sleep 7
+    check "5 with the permission a take runs through AudioRecord and the check judges it (host mic off: silent)" "$(onscreen '소리가 안 들렸어요')" yes
+    tap_text "닫기"; sleep 1
+    garage tab --es tab tune; sleep 1.5; tap_text "오픈소스 라이선스"; sleep 1.5
+    check "6 the 세팅 tab shows the open-source notices" "$(onscreen 'Pleos Connect SDK')" yes
+    tap_text "닫기"; sleep 1
+  } | tee "$HERE/../docs/m5/release_voice.txt"
+}
+
 # Revs in park for 20 s (pedal 70% and 0% a second each) with the engine on, then stops it; prints cpu_split's line.
 rev_cpu() {
   drive screen --es to start; sleep 2; app --es cmd start; sleep 3
@@ -606,6 +636,7 @@ case "$cmd" in
   ux) ux ;;
   voice) voice ;;
   voicecpu) voicecpu ;;
+  releasevoice) releasevoice ;;
   wallet) wallet ;;
   latency) latency ;;
   cpu) cpu ;;
@@ -614,5 +645,5 @@ case "$cmd" in
   video) video ;;
   shots) shots ;;
   volume) volume "${2:?index 0..45}"; echo "car volume $(volume_index) / 45" ;;
-  *) echo "usage: show.sh wallet|latency|cpu|background|pt|video|shots|volume N|soak [MIN]|coldstart|release|ux|voice|voicecpu"; exit 1 ;;
+  *) echo "usage: show.sh wallet|latency|cpu|background|pt|video|shots|volume N|soak [MIN]|coldstart|release|ux|voice|voicecpu|releasevoice"; exit 1 ;;
 esac
