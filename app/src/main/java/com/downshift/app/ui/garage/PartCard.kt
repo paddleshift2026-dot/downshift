@@ -63,7 +63,7 @@ internal fun statusLine(status: PartStatus, part: Part): Pair<String, Color> = w
     PartStatus.UNLOCKABLE -> "${points(part.price)} P · 해금 가능" to Clean
     PartStatus.LOCKED -> "${points(part.price)} P" to Clean
     PartStatus.PLACEHOLDER -> "고르는 중" to Faint
-    PartStatus.LIMITED -> "한정 콜라보 · [가격]" to Gold
+    PartStatus.LIMITED -> "한정 콜라보 · 3,900원부터" to Gold // sold apart from points (기획서 6장: 팩당 3,900~9,900원)
 }
 
 /**

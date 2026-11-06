@@ -10,11 +10,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -29,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -83,8 +87,34 @@ internal fun TuneTab(ui: GarageUi, vm: GarageViewModel) {
         )
         SafetyNoteRow(vm)
         if (ui.recorded.isNotEmpty()) VoiceDeleteRow(parked, vm)
+        OssLicensesRow()
         DemoModeRow(demoOn, parked, vm)
         if (demoOn) DemoSection(vm)
+    }
+}
+
+/** The open-source notices (assets/oss_licenses.txt, made by tools/oss_notices.py from the release dependencies). */
+@Composable
+private fun OssLicensesRow() {
+    var open by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(18.dp)
+    Row(
+        Modifier.fillMaxWidth().height(72.dp).clip(shape).border(1.dp, Rule, shape)
+            .clickable(role = Role.Button) { open = true }.padding(horizontal = 24.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("오픈소스 라이선스", Modifier.weight(1f), color = Ink, fontSize = 24.sp)
+        Text("보기", color = Muted, fontSize = 22.sp)
+    }
+    if (open) {
+        val context = LocalContext.current
+        val text = remember { runCatching { context.assets.open("oss_licenses.txt").bufferedReader().use { it.readText() } }.getOrDefault("") }
+        AlertDialog(
+            onDismissRequest = { open = false },
+            confirmButton = { TextButton(onClick = { open = false }) { Text("닫기", fontSize = 22.sp) } },
+            title = { Text("오픈소스 라이선스") },
+            text = { Text(text, Modifier.heightIn(max = 600.dp).verticalScroll(rememberScrollState()), fontSize = 16.sp, lineHeight = 22.sp) },
+        )
     }
 }
 

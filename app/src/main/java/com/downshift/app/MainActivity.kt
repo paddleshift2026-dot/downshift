@@ -59,7 +59,8 @@ class MainActivity : ComponentActivity() {
      * Runtime grants for the AAOS properties, whatever stays denied shows up in the probe ledger; and, on Android 13+,
      * notifications, so DriveService's "engine on" notice can be shown (the service runs either way). Only runtime
      * (dangerous) permissions are asked for: the privileged ones an app cannot get (CAR_MILEAGE, CONTROL_CAR_SEATS, …)
-     * put the permission dialog in front of every start (M4).
+     * put the permission dialog in front of every start (M4). Only declared ones, too: the release manifest leaves the
+     * probe's extra reads out (src/debug/AndroidManifest.xml has them).
      */
     private fun requestCarPermissions() {
         val notifications = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) listOf(Manifest.permission.POST_NOTIFICATIONS) else emptyList()
@@ -70,8 +71,15 @@ class MainActivity : ComponentActivity() {
                 "android.car.permission.CAR_MILEAGE", "android.car.permission.CAR_INFO",
                 "android.car.permission.CAR_EXTERIOR_LIGHTS", "android.car.permission.CONTROL_CAR_SEATS",
             ) + notifications
-            ).filter { isRuntime(it) && ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+            ).filter { it in declared && isRuntime(it) && ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
         if (wanted.isNotEmpty()) runCatching { ActivityCompat.requestPermissions(this, wanted.toTypedArray(), 1) }
+    }
+
+    /** The permissions this build's merged manifest declares. */
+    private val declared: Set<String> by lazy {
+        @Suppress("DEPRECATION")
+        runCatching { packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS).requestedPermissions?.toSet() }
+            .getOrNull() ?: emptySet()
     }
 
     private fun isRuntime(permission: String): Boolean =
