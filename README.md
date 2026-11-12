@@ -18,6 +18,8 @@
 
 **APK:** `apk/PaddleShift_Downshift_release.apk` (release 0.5.1, 설치·실행 가능한 release 빌드)
 
+**개발·심사 환경:** Pleos Connect Emulator v2.1.0 (Android 14, API 34, Automotive, x86_64 이미지). 화면 규격은 2560×1440, 160dpi(density 1.0)이고, Pleos 홈이 앱에 주는 창은 1682×1210입니다.
+
 준비: Android Studio의 Pleos Connect Emulator v2.1.0 AVD(API 34, Automotive), PC의 adb. 기어·페달·좌석은 에뮬레이터 안의 Virtual Console로 바꿉니다(`adb forward tcp:8088 tcp:8088` 후 브라우저로 http://127.0.0.1:8088).
 
 ```bash
